@@ -6,8 +6,9 @@
 class ezQtSearchWidget;
 class ezQtDocumentTreeView;
 class ezSceneDocument;
+class QStackedWidget;
 
-class ezQtScenegraphPanel : public ezQtGameObjectPanel
+class ezQtScenegraphPanel : public ezQtDocumentPanel
 {
   Q_OBJECT
 
@@ -17,5 +18,7 @@ public:
 
 private:
   ezSceneDocument* m_pSceneDocument;
+  QStackedWidget* m_pStack = nullptr;
+  ezQtGameObjectWidget* m_pMainGameObjectWidget = nullptr;
 };
 
