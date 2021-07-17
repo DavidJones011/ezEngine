@@ -77,10 +77,21 @@ public:
   virtual ezVariant GetDefaultValue(const ezDocumentObject* pObject, const char* szProperty, ezVariant index = ezVariant()) const;
   virtual bool IsDefaultValue(const ezDocumentObject* pObject, const char* szProperty, bool bReturnOnInvalid, ezVariant index = ezVariant()) const;
 
+  //#TODO Document Host / Client document concept
+  const ezDocument* GetHostDocument() const { return m_pHostDocument; }
+  const ezDocument* GetActiveClientDocument() const { return m_pActiveClientDocument; }
+  ezDocument* GetHostDocument() { return m_pHostDocument; }
+  ezDocument* GetActiveClientDocument() { return m_pActiveClientDocument; }
+
+protected:
+  ezDocument* m_pHostDocument = nullptr;
+  ezDocument* m_pActiveClientDocument = nullptr;
+
   ///@}
   /// \name Document Management Functions
   ///@{
 
+public:
   /// \brief Returns the absolute path to the document.
   const char* GetDocumentPath() const { return m_sDocumentPath; }
 
