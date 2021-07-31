@@ -16,6 +16,7 @@ public:
 
   virtual void HandleMessage(const ezEditorEngineDocumentMsg* pMsg) override;
   void SceneDeinitialized();
+  const ezTag& GetLayerTag() const;
 
 protected:
   virtual void OnInitialize() override;
@@ -29,4 +30,5 @@ protected:
 
 private:
   ezSceneContext* m_pParentSceneContext = nullptr;
+  ezTag m_LayerTag;
 };

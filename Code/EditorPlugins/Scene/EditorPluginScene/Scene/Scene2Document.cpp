@@ -361,6 +361,20 @@ void ezScene2Document::UpdateLayers()
   }
 }
 
+void ezScene2Document::SendLayerVisibility()
+{
+  ezLayerVisibilityChangedMsgToEngine msg;
+  for (auto& layer : m_Layers)
+  {
+    if (!layer.Value().m_bVisible)
+    {
+      // We are sending the hidden state because the default state is visible so we have less to send and less often.
+      msg.m_HiddenLayers.PushBack(layer.Key());
+    }
+  }
+  SendMessageToEngine(&msg);
+}
+
 void ezScene2Document::LayerAdded(const ezUuid& layerGuid, const ezUuid& layerObjectGuid)
 {
   LayerInfo info;
@@ -682,6 +696,37 @@ void ezScene2Document::GetLoadedLayers(ezDynamicArray<ezSceneDocument*>& out_Lay
       out_LayerGuids.PushBack(it.Value().m_pLayer);
     }
   }
+}
+
+bool ezScene2Document::IsLayerVisible(const ezUuid& layerGuid) const
+{
+  const LayerInfo* pInfo = nullptr;
+  if (m_Layers.TryGetValue(layerGuid, pInfo))
+  {
+    return pInfo->m_bVisible;
+  }
+  return false;
+}
+
+ezStatus ezScene2Document::SetLayerVisible(const ezUuid& layerGuid, bool bVisible)
+{
+  LayerInfo* pInfo = nullptr;
+  if (m_Layers.TryGetValue(layerGuid, pInfo))
+  {
+    if (pInfo->m_bVisible != bVisible)
+    {
+      pInfo->m_bVisible = bVisible;
+      {
+        ezScene2LayerEvent e;
+        e.m_Type = bVisible ? ezScene2LayerEvent::Type::LayerVisible : ezScene2LayerEvent::Type::LayerInvisible;
+        e.m_layerGuid = layerGuid;
+        m_LayerEvents.Broadcast(e);
+      }
+      SendLayerVisibility();
+    }
+    return ezStatus(EZ_SUCCESS);
+  }
+  return ezStatus("Unknown layer.");
 }
 
 const ezDocumentObject* ezScene2Document::GetLayerObject(const ezUuid& layerGuid) const

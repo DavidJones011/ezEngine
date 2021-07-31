@@ -32,6 +32,12 @@ void ezLayerContext::HandleMessage(const ezEditorEngineDocumentMsg* pMsg)
   m_Context.m_uiNextComponentPickingID = m_pParentSceneContext->m_Context.m_uiNextComponentPickingID;
   ezEngineProcessDocumentContext::HandleMessage(pMsg);
   m_pParentSceneContext->m_Context.m_uiNextComponentPickingID = m_Context.m_uiNextComponentPickingID;
+
+  if (pMsg->IsInstanceOf<ezEntityMsgToEngine>())
+  {
+    EZ_LOCK(m_pWorld->GetWriteMarker());
+    m_pParentSceneContext->AddLayerIndexTag(*static_cast<const ezEntityMsgToEngine*>(pMsg), m_Context, m_LayerTag);
+  }
 }
 
 void ezLayerContext::SceneDeinitialized()
@@ -39,6 +45,11 @@ void ezLayerContext::SceneDeinitialized()
   // If the scene is deinitialized the world is destroyed so there is no use tracking anything further.
   m_pWorld = nullptr;
   m_Context.Clear();
+}
+
+const ezTag& ezLayerContext::GetLayerTag() const
+{
+  return m_LayerTag;
 }
 
 void ezLayerContext::OnInitialize()
@@ -51,7 +62,10 @@ void ezLayerContext::OnInitialize()
   m_Context.m_pWorld = m_pWorld;
   m_Mirror.InitReceiver(&m_Context);
 
-  m_pParentSceneContext->RegisterLayer(this);
+  ezUInt32 uiLayerID = m_pParentSceneContext->RegisterLayer(this);
+  ezStringBuilder sVisibilityTag;
+  sVisibilityTag.Format("Layer_{}", uiLayerID);
+  m_LayerTag = ezTagRegistry::GetGlobalRegistry().RegisterTag(sVisibilityTag);
 }
 
 void ezLayerContext::OnDeinitialize()
@@ -63,6 +77,7 @@ void ezLayerContext::OnDeinitialize()
     m_Context.DeleteExistingObjects();
   }
 
+  m_LayerTag = ezTag();
   m_pParentSceneContext->UnregisterLayer(this);
   m_pParentSceneContext = nullptr;
 }

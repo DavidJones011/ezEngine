@@ -140,8 +140,9 @@ void ezLayerAction::Execute(const ezVariant& value)
     }
     case ActionType::LayerVisible:
     {
-      /*ezUuid layerGuid = GetCurrentSelectedLayer();
-      m_pSceneDocument->SetLayerLoaded(layerGuid, !m_pSceneDocument->IsLayerLoaded(layerGuid)).LogFailure();*/
+      ezUuid layerGuid = GetCurrentSelectedLayer();
+      bool bVisible = !m_pSceneDocument->IsLayerVisible(layerGuid);
+      m_pSceneDocument->SetLayerVisible(layerGuid, bVisible).LogFailure();
       return;
     }
   }
@@ -179,8 +180,8 @@ void ezLayerAction::UpdateEnableState()
     }
     case ActionType::LayerVisible:
     {
-      SetEnabled(layerGuid.IsValid() && layerGuid != m_pSceneDocument->GetGuid());
-      SetChecked(true);
+      SetEnabled(layerGuid.IsValid());
+      SetChecked(m_pSceneDocument->IsLayerVisible(layerGuid));
       return;
     }
   }

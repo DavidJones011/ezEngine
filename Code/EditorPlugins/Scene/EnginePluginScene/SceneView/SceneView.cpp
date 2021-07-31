@@ -64,6 +64,21 @@ void ezSceneViewContext::HandleViewMessage(const ezEditorEngineViewMsg* pMsg)
   }
 }
 
+void ezSceneViewContext::SetupRenderTarget(ezGALRenderTargetSetup& renderTargetSetup, ezUInt16 uiWidth, ezUInt16 uiHeight)
+{
+  ezEngineProcessViewContext::SetupRenderTarget(renderTargetSetup, uiWidth, uiHeight);
+  ezView* pView = nullptr;
+  if (ezRenderWorld::TryGetView(m_hView, pView))
+  {
+    ezTagSet& excludeTags = pView->m_ExcludeTags;
+    const ezArrayPtr<const ezTag> addTags = m_pSceneContext->GetInvisibleLayerTags();
+    for (const ezTag& addTag : addTags)
+    {
+      excludeTags.Set(addTag);
+    }
+  }
+}
+
 bool ezSceneViewContext::UpdateThumbnailCamera(const ezBoundingBoxSphere& bounds)
 {
   ezView* pView = nullptr;
@@ -99,6 +114,23 @@ bool ezSceneViewContext::UpdateThumbnailCamera(const ezBoundingBoxSphere& bounds
   bool bResult = !FocusCameraOnObject(m_Camera, bounds, 70.0f, -ezVec3(5, -2, 3));
   m_CullingCamera = m_Camera;
   return bResult;
+}
+
+void ezSceneViewContext::SetInvisibleLayerTags(const ezArrayPtr<ezTag> removeTags, const ezArrayPtr<ezTag> addTags)
+{
+  ezView* pView = nullptr;
+  if (ezRenderWorld::TryGetView(m_hView, pView))
+  {
+    ezTagSet& excludeTags = pView->m_ExcludeTags;
+    for (const ezTag& removeTag : removeTags)
+    {
+      excludeTags.Remove(removeTag);
+    }
+    for (const ezTag& addTag : addTags)
+    {
+      excludeTags.Set(addTag);
+    }
+  }
 }
 
 void ezSceneViewContext::Redraw(bool bRenderEditorGizmos)

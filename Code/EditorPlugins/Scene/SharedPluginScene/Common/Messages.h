@@ -63,3 +63,11 @@ class EZ_SHAREDPLUGINSCENE_DLL ezActiveLayerChangedMsgToEngine : public ezEditor
 public:
   ezUuid m_ActiveLayer;
 };
+
+class EZ_SHAREDPLUGINSCENE_DLL ezLayerVisibilityChangedMsgToEngine : public ezEditorEngineDocumentMsg
+{
+  EZ_ADD_DYNAMIC_REFLECTION(ezLayerVisibilityChangedMsgToEngine, ezEditorEngineDocumentMsg);
+
+public:
+  ezHybridArray<ezUuid, 1> m_HiddenLayers;
+};

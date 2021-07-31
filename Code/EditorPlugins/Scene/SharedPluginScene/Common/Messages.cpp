@@ -73,4 +73,14 @@ EZ_BEGIN_DYNAMIC_REFLECTED_TYPE(ezActiveLayerChangedMsgToEngine, 1, ezRTTIDefaul
   EZ_END_PROPERTIES;
 }
 EZ_END_DYNAMIC_REFLECTED_TYPE;
+
+EZ_BEGIN_DYNAMIC_REFLECTED_TYPE(ezLayerVisibilityChangedMsgToEngine, 1, ezRTTIDefaultAllocator<ezLayerVisibilityChangedMsgToEngine>)
+{
+  EZ_BEGIN_PROPERTIES
+  {
+    EZ_ARRAY_MEMBER_PROPERTY("HiddenLayers", m_HiddenLayers),
+  }
+  EZ_END_PROPERTIES;
+}
+EZ_END_DYNAMIC_REFLECTED_TYPE;
 // clang-format on

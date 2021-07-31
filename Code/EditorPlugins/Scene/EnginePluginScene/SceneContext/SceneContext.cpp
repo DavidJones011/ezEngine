@@ -68,6 +68,44 @@ void ezSceneContext::DrawSelectionBounds(const ezViewHandle& hView)
   }
 }
 
+void ezSceneContext::UpdateInvisibleLayerTags()
+{
+  if (m_bInvisibleLayersDirty)
+  {
+    m_bInvisibleLayersDirty = false;
+
+    ezMap<ezUuid, ezUInt32> layerGuidToIndex;
+    for (ezUInt32 i = 0; i < m_Layers.GetCount(); i++)
+    {
+      if (m_Layers[i] != nullptr)
+      {
+        layerGuidToIndex.Insert(m_Layers[i]->GetDocumentGuid(), i);
+      }
+    }
+
+    ezHybridArray<ezTag, 1> newInvisibleLayerTags;
+    newInvisibleLayerTags.Reserve(m_InvisibleLayers.GetCount());
+    for (const ezUuid& guid : m_InvisibleLayers)
+    {
+      ezUInt32 uiLayerID = 0;
+      if (layerGuidToIndex.TryGetValue(guid, uiLayerID))
+      {
+        newInvisibleLayerTags.PushBack(m_Layers[uiLayerID]->GetLayerTag());
+      }
+      else if (guid == GetDocumentGuid())
+      {
+        newInvisibleLayerTags.PushBack(m_LayerTag);
+      }
+    }
+
+    for (ezEngineProcessViewContext* pView : m_ViewContexts)
+    {
+      static_cast<ezSceneViewContext*>(pView)->SetInvisibleLayerTags(m_InvisibleLayerTags.GetArrayPtr(), newInvisibleLayerTags.GetArrayPtr());
+    }
+    m_InvisibleLayerTags.Swap(newInvisibleLayerTags);
+  }
+}
+
 ezSceneContext::ezSceneContext()
 {
   m_bRenderSelectionOverlay = true;
@@ -79,12 +117,14 @@ ezSceneContext::ezSceneContext()
 
   ezVisualScriptComponent::GetActivityEvents().AddEventHandler(ezMakeDelegate(&ezSceneContext::OnVisualScriptActivity, this));
   ezResourceManager::GetManagerEvents().AddEventHandler(ezMakeDelegate(&ezSceneContext::OnResourceManagerEvent, this));
+  ezGameApplicationBase::GetGameApplicationBaseInstance()->m_ExecutionEvents.AddEventHandler(ezMakeDelegate(&ezSceneContext::GameApplicationEventHandler, this));
 }
 
 ezSceneContext::~ezSceneContext()
 {
   ezVisualScriptComponent::GetActivityEvents().RemoveEventHandler(ezMakeDelegate(&ezSceneContext::OnVisualScriptActivity, this));
   ezResourceManager::GetManagerEvents().RemoveEventHandler(ezMakeDelegate(&ezSceneContext::OnResourceManagerEvent, this));
+  ezGameApplicationBase::GetGameApplicationBaseInstance()->m_ExecutionEvents.RemoveEventHandler(ezMakeDelegate(&ezSceneContext::GameApplicationEventHandler, this));
 }
 
 void ezSceneContext::HandleMessage(const ezEditorEngineDocumentMsg* pMsg)
@@ -174,7 +214,19 @@ void ezSceneContext::HandleMessage(const ezEditorEngineDocumentMsg* pMsg)
     return;
   }
 
+  if (pMsg->IsInstanceOf<ezLayerVisibilityChangedMsgToEngine>())
+  {
+    HandleLayerVisibilityChangedMsgToEngineMsg(static_cast<const ezLayerVisibilityChangedMsgToEngine*>(pMsg));
+    return;
+  }
+
   ezEngineProcessDocumentContext::HandleMessage(pMsg);
+
+  if (pMsg->IsInstanceOf<ezEntityMsgToEngine>())
+  {
+    EZ_LOCK(m_pWorld->GetWriteMarker());
+    AddLayerIndexTag(*static_cast<const ezEntityMsgToEngine*>(pMsg), m_Context, m_LayerTag);
+  }
 }
 
 void ezSceneContext::HandleViewRedrawMsg(const ezViewRedrawMsgToEngine* pMsg)
@@ -196,6 +248,7 @@ void ezSceneContext::HandleViewRedrawMsg(const ezViewRedrawMsgToEngine* pMsg)
     DrawSelectionBounds(pDocView->GetViewHandle());
 
   AnswerObjectStatePullRequest(pMsg);
+  UpdateInvisibleLayerTags();
 }
 
 void ezSceneContext::AnswerObjectStatePullRequest(const ezViewRedrawMsgToEngine* pMsg)
@@ -293,6 +346,12 @@ void ezSceneContext::HandleTagMsgToEngineMsg(const ezObjectTagMsgToEngine* pMsg)
         pObject->GetTags().Remove(tag);
     }
   }
+}
+
+void ezSceneContext::HandleLayerVisibilityChangedMsgToEngineMsg(const ezLayerVisibilityChangedMsgToEngine* pMsg)
+{
+  m_InvisibleLayers = pMsg->m_HiddenLayers;
+  m_bInvisibleLayersDirty = true;
 }
 
 void ezSceneContext::HandleGridSettingsMsg(const ezGridSettingsMsgToEngine* pMsg)
@@ -440,16 +499,59 @@ ezGameStateBase* ezSceneContext::GetGameState() const
   return ezGameApplicationBase::GetGameApplicationBaseInstance()->GetActiveGameStateLinkedToWorld(m_pWorld);
 }
 
-void ezSceneContext::RegisterLayer(ezLayerContext* pLayer)
+ezUInt32 ezSceneContext::RegisterLayer(ezLayerContext* pLayer)
 {
-  m_Layers.PushBack(pLayer);
+  m_bInvisibleLayersDirty = true;
   m_Contexts.PushBack(&pLayer->m_Context);
+  for (ezUInt32 i = 0; i < m_Layers.GetCount(); ++i)
+  {
+    if (m_Layers[i] == nullptr)
+    {
+      m_Layers[i] = pLayer;
+      return i;
+    }
+  }
+
+  m_Layers.PushBack(pLayer);
+  return m_Layers.GetCount() - 1;
 }
 
 void ezSceneContext::UnregisterLayer(ezLayerContext* pLayer)
 {
-  m_Layers.RemoveAndSwap(pLayer);
   m_Contexts.RemoveAndSwap(&pLayer->m_Context);
+  for (ezUInt32 i = 0; i < m_Layers.GetCount(); ++i)
+  {
+    if (m_Layers[i] == pLayer)
+    {
+      m_Layers[i] = nullptr;
+    }
+  }
+
+  while (!m_Layers.IsEmpty() && m_Layers.PeekBack() == nullptr)
+    m_Layers.PopBack();
+}
+
+void ezSceneContext::AddLayerIndexTag(const ezEntityMsgToEngine& msg, ezWorldRttiConverterContext& context, const ezTag& layerTag)
+{
+  if (msg.m_change.m_Change.m_Operation == ezObjectChangeType::NodeAdded)
+  {
+    if ((msg.m_change.m_Change.m_sProperty == "Children" || msg.m_change.m_Change.m_sProperty.IsEmpty()) && msg.m_change.m_Change.m_Value.IsA<ezUuid>())
+    {
+      const ezUuid& object = msg.m_change.m_Change.m_Value.Get<ezUuid>();
+      ezRttiConverterObject target = context.GetObjectByGUID(object);
+      if (target.m_pType == ezGetStaticRTTI<ezGameObject>() && target.m_pObject != nullptr)
+      {
+        // We do postpone tagging until after the first frame so that prefab references are instantiated and affected as well.
+        ezGameObject* pObject = static_cast<ezGameObject*>(target.m_pObject);
+        m_ObjectsToTag.PushBack({pObject->GetHandle(), layerTag});
+      }
+    }
+  }
+}
+
+const ezArrayPtr<const ezTag> ezSceneContext::GetInvisibleLayerTags() const
+{
+  return m_InvisibleLayerTags.GetArrayPtr();
 }
 
 void ezSceneContext::OnInitialize()
@@ -458,6 +560,8 @@ void ezSceneContext::OnInitialize()
   if (!m_ActiveLayer.IsValid())
     m_ActiveLayer = m_DocumentGuid;
   m_Contexts.PushBack(&m_Context);
+
+  m_LayerTag = ezTagRegistry::GetGlobalRegistry().RegisterTag("Layer_Scene");
 }
 
 void ezSceneContext::OnDeinitialize()
@@ -468,10 +572,11 @@ void ezSceneContext::OnDeinitialize()
   m_hAmbientLight[0].Invalidate();
   m_hAmbientLight[1].Invalidate();
   m_hAmbientLight[2].Invalidate();
-
-  for (ezLayerContext* pLayer: m_Layers)
+  m_LayerTag = ezTag();
+  for (ezLayerContext* pLayer : m_Layers)
   {
-    pLayer->SceneDeinitialized();
+    if (pLayer != nullptr)
+      pLayer->SceneDeinitialized();
   }
 }
 
@@ -602,6 +707,24 @@ void ezSceneContext::OnResourceManagerEvent(const ezResourceManagerEvent& e)
     // when resources get reloaded, make sure to update all object bounds
     // this is to prevent culling errors after meshes got transformed etc.
     m_bUpdateAllLocalBounds = true;
+  }
+}
+
+void ezSceneContext::GameApplicationEventHandler(const ezGameApplicationExecutionEvent& e)
+{
+  if (e.m_Type == ezGameApplicationExecutionEvent::Type::AfterUpdatePlugins && !m_ObjectsToTag.IsEmpty())
+  {
+    // At this point the world was ticked once and prefab instances are instantiated and will be affected by SetTagRecursive.
+    EZ_LOCK(m_pWorld->GetWriteMarker());
+    for (const TagGameObject& tagObject : m_ObjectsToTag)
+    {
+      ezGameObject* pObject = nullptr;
+      if (m_pWorld->TryGetObject(tagObject.m_hObject, pObject))
+      {
+        SetTagRecursive(pObject, tagObject.m_Tag);
+      }
+    }
+    m_ObjectsToTag.Clear();
   }
 }
 
@@ -907,7 +1030,7 @@ ezWorldRttiConverterContext& ezSceneContext::GetActiveContext()
 
   for (ezLayerContext* pLayer : m_Layers)
   {
-    if (m_ActiveLayer == pLayer->GetDocumentGuid())
+    if (pLayer && m_ActiveLayer == pLayer->GetDocumentGuid())
     {
       return pLayer->m_Context;
     }
@@ -924,7 +1047,7 @@ ezWorldRttiConverterContext* ezSceneContext::GetContextForLayer(const ezUuid& la
 
   for (ezLayerContext* pLayer : m_Layers)
   {
-    if (layerGuid == pLayer->GetDocumentGuid())
+    if (pLayer && layerGuid == pLayer->GetDocumentGuid())
     {
       return &pLayer->m_Context;
     }

@@ -21,6 +21,7 @@ class ezViewRedrawMsgToEngine;
 class ezWorldWriter;
 class ezDeferredFileWriter;
 class ezLayerContext;
+struct ezGameApplicationExecutionEvent;
 
 class EZ_ENGINEPLUGINSCENE_DLL ezSceneContext : public ezEngineProcessDocumentContext
 {
@@ -44,8 +45,10 @@ public:
   ezGameStateBase* GetGameState() const;
   bool IsPlayTheGameActive() const { return GetGameState() != nullptr; }
 
-  void RegisterLayer(ezLayerContext* pLayer);
+  ezUInt32 RegisterLayer(ezLayerContext* pLayer);
   void UnregisterLayer(ezLayerContext* pLayer);
+  void AddLayerIndexTag(const ezEntityMsgToEngine& msg, ezWorldRttiConverterContext& context, const ezTag& layerTag);
+  const ezArrayPtr<const ezTag> GetInvisibleLayerTags() const;
 
   ezWorldRttiConverterContext& GetActiveContext();
   ezWorldRttiConverterContext* GetContextForLayer(const ezUuid& layerGuid);
@@ -66,6 +69,12 @@ protected:
   virtual void UpdateDocumentContext() override;
 
 private:
+  struct TagGameObject
+  {
+    ezGameObjectHandle m_hObject;
+    ezTag m_Tag;
+  };
+
   void AddAmbientLight(bool bSetEditorTag);
   void RemoveAmbientLight();
 
@@ -84,9 +93,11 @@ private:
   void AnswerObjectStatePullRequest(const ezViewRedrawMsgToEngine* pMsg);
   void HandleActiveLayerChangedMsg(const ezActiveLayerChangedMsgToEngine* pMsg);
   void HandleTagMsgToEngineMsg(const ezObjectTagMsgToEngine* pMsg);
+  void HandleLayerVisibilityChangedMsgToEngineMsg(const ezLayerVisibilityChangedMsgToEngine* pMsg);
 
   void DrawSelectionBounds(const ezViewHandle& hView);
 
+  void UpdateInvisibleLayerTags();
   void InsertSelectedChildren(const ezGameObject* pObject);
   void QuerySelectionBBox(const ezEditorEngineDocumentMsg* pMsg);
   void OnSimulationEnabled();
@@ -95,6 +106,7 @@ private:
 
   void OnVisualScriptActivity(const ezVisualScriptComponentActivityEvent& e);
   void OnResourceManagerEvent(const ezResourceManagerEvent& e);
+  void GameApplicationEventHandler(const ezGameApplicationExecutionEvent& e);
 
   bool m_bUpdateAllLocalBounds = false;
   bool m_bRenderSelectionOverlay;
@@ -114,4 +126,14 @@ private:
   ezUuid m_ActiveLayer;
   ezDynamicArray<ezLayerContext*> m_Layers;
   ezDynamicArray<ezWorldRttiConverterContext*> m_Contexts;
+
+  // We use tags in the form of Layer_4 (Layer_main for the scene itself) to not pollute the tag registry with hundreds of unique tags. The tags do not need to be unique across documents so we can just use the layer index but that requires the Tags to be recomputed whenever we remove / add layers.
+  // By caching the guids we do not need to send another message each time a layer is loaded as we send also guids of unloaded layers.
+  ezTag m_LayerTag;
+  ezHybridArray<ezUuid, 1> m_InvisibleLayers;
+  bool m_bInvisibleLayersDirty = true;
+  ezHybridArray<ezTag, 1> m_InvisibleLayerTags;
+
+  ezDynamicArray<TagGameObject> m_ObjectsToTag;
+
 };

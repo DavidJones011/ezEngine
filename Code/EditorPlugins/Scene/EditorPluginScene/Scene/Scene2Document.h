@@ -53,6 +53,8 @@ struct ezScene2LayerEvent
     LayerRemoved,
     LayerLoaded,
     LayerUnloaded,
+    LayerVisible,
+    LayerInvisible,
     ActiveLayerChanged,
   };
 
@@ -86,6 +88,9 @@ public:
   ezStatus SetLayerLoaded(const ezUuid& layerGuid, bool bLoaded);
   void GetLoadedLayers(ezDynamicArray<ezSceneDocument*>& out_LayerGuids) const;
 
+  bool IsLayerVisible(const ezUuid& layerGuid) const;
+  ezStatus SetLayerVisible(const ezUuid& layerGuid, bool bVisible);
+
   const ezDocumentObject* GetLayerObject(const ezUuid& layerGuid) const;
   ezSceneDocument* GetLayerDocument(const ezUuid& layerGuid) const;
 
@@ -110,6 +115,7 @@ private:
   void HandleObjectStateFromEngineMsg2(const ezPushObjectStateMsgToEditor* pMsg);
 
   void UpdateLayers();
+  void SendLayerVisibility();
   void LayerAdded(const ezUuid& layerGuid, const ezUuid& layerObjectGuid);
   void LayerRemoved(const ezUuid& layerGuid);
 
