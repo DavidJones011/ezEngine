@@ -450,21 +450,44 @@ Qt::ItemFlags ezQtDocumentTreeModel::flags(const QModelIndex& index) const
 
 bool ezQtDocumentTreeModel::canDropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) const
 {
-  const ezDocumentObject* pParent = (const ezDocumentObject*)parent.internalPointer();
+  const ezDocumentObject* pNewParent = (const ezDocumentObject*)parent.internalPointer();
+  if (!pNewParent)
+    pNewParent = GetRoot();
 
   ezDragDropInfo info;
   info.m_iTargetObjectInsertChildIndex = row;
   info.m_pMimeData = data;
-  info.m_sTargetContext = "scenetree";
+  info.m_sTargetContext = m_sTargetContext;
   info.m_TargetDocument = m_pDocumentTree->GetDocument()->GetGuid();
-  info.m_TargetObject = pParent != nullptr ? pParent->GetGuid() : ezUuid();
+  info.m_TargetObject = pNewParent->GetGuid();
   info.m_bCtrlKeyDown = QApplication::queryKeyboardModifiers() & Qt::ControlModifier;
   info.m_bShiftKeyDown = QApplication::queryKeyboardModifiers() & Qt::ShiftModifier;
+  info.m_pAdapter = GetAdapter(pNewParent->GetType());
 
   if (ezDragDropHandler::CanDropOnly(&info))
     return true;
 
-  return QAbstractItemModel::canDropMimeData(data, action, row, column, parent);
+  {
+    // Test 'CanMove' of the target object manager.
+    QByteArray encodedData = data->data("application/ezEditor.ObjectSelection");
+    QDataStream stream(&encodedData, QIODevice::ReadOnly);
+    ezHybridArray<ezDocumentObject*, 32> Dragged;
+    stream >> Dragged;
+
+    auto pType = pNewParent->GetTypeAccessor().GetType();
+    auto pAdapter = GetAdapter(pType);
+    const ezString& sProperty = pAdapter->GetChildProperty();
+    for (const ezDocumentObject* pItem : Dragged)
+    {
+      // If the item's and the target tree's document don't match we can't operate via this code.
+      if (pItem->GetDocumentObjectManager()->GetDocument() != m_pDocumentTree->GetDocument())
+        return false;
+      if (m_pDocumentTree->CanMove(pItem, pNewParent, sProperty, info.m_iTargetObjectInsertChildIndex).Failed())
+        return false;
+    }
+    return QAbstractItemModel::canDropMimeData(data, action, row, column, parent);
+  }
+  return false;
 }
 
 bool ezQtDocumentTreeModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent)
@@ -475,51 +498,44 @@ bool ezQtDocumentTreeModel::dropMimeData(const QMimeData* data, Qt::DropAction a
   if (column > 0)
     return false;
 
+  const ezDocumentObject* pNewParent = (const ezDocumentObject*)parent.internalPointer();
+  if (!pNewParent)
+    pNewParent = GetRoot();
+
+  ezDragDropInfo info;
+  info.m_iTargetObjectInsertChildIndex = row;
+  info.m_pMimeData = data;
+  info.m_sTargetContext = m_sTargetContext;
+  info.m_TargetDocument = m_pDocumentTree->GetDocument()->GetGuid();
+  info.m_TargetObject = pNewParent->GetGuid();
+  info.m_bCtrlKeyDown = QApplication::queryKeyboardModifiers() & Qt::ControlModifier;
+  info.m_bShiftKeyDown = QApplication::queryKeyboardModifiers() & Qt::ShiftModifier;
+  info.m_pAdapter = GetAdapter(pNewParent->GetType());
+  if (ezDragDropHandler::DropOnly(&info))
+    return true;
+
+  return ezQtDocumentTreeModel::MoveObjects(info);
+}
+
+
+bool ezQtDocumentTreeModel::MoveObjects(const ezDragDropInfo& info)
+{
+  if (info.m_pMimeData->hasFormat("application/ezEditor.ObjectSelection"))
   {
-    const ezDocumentObject* pParent = (const ezDocumentObject*)parent.internalPointer();
+    auto pDoc = ezDocumentManager::GetDocumentByGuid(info.m_TargetDocument);
+    const ezDocumentObject* pTarget = pDoc->GetObjectManager()->GetObject(info.m_TargetObject);
 
-    ezDragDropInfo info;
-    info.m_iTargetObjectInsertChildIndex = row;
-    info.m_pMimeData = data;
-    info.m_sTargetContext = "scenetree";
-    info.m_TargetDocument = m_pDocumentTree->GetDocument()->GetGuid();
-    info.m_TargetObject = pParent != nullptr ? pParent->GetGuid() : ezUuid();
-    info.m_bCtrlKeyDown = QApplication::queryKeyboardModifiers() & Qt::ControlModifier;
-    info.m_bShiftKeyDown = QApplication::queryKeyboardModifiers() & Qt::ShiftModifier;
-
-    if (ezDragDropHandler::DropOnly(&info))
-      return true;
-  }
-
-
-  if (data->hasFormat("application/ezEditor.ObjectSelection"))
-  {
-    const ezDocumentObject* pNewParent = (const ezDocumentObject*)parent.internalPointer();
-    if (!pNewParent)
-      pNewParent = GetRoot();
-    ezHybridArray<const ezDocumentObject*, 32> Dragged;
-
-    QByteArray encodedData = data->data("application/ezEditor.ObjectSelection");
+    QByteArray encodedData = info.m_pMimeData->data("application/ezEditor.ObjectSelection");
     QDataStream stream(&encodedData, QIODevice::ReadOnly);
+    ezHybridArray<ezDocumentObject*, 32> Dragged;
+    stream >> Dragged;
 
-    int iIndices = 0;
-    stream >> iIndices;
-
-    for (int i = 0; i < iIndices; ++i)
+    for (const ezDocumentObject* pDocObject : Dragged)
     {
-      void* p = nullptr;
-
-      uint len = sizeof(void*);
-      stream.readRawData((char*)&p, len);
-
-      const ezDocumentObject* pDocObject = (const ezDocumentObject*)p;
-
-      Dragged.PushBack(pDocObject);
-
-      if (action != Qt::DropAction::MoveAction)
+      //if (action != Qt::DropAction::MoveAction)
       {
         bool bCanMove = true;
-        const ezDocumentObject* pCurParent = pNewParent;
+        const ezDocumentObject* pCurParent = pTarget;
 
         while (pCurParent)
         {
@@ -540,21 +556,17 @@ bool ezQtDocumentTreeModel::dropMimeData(const QMimeData* data, Qt::DropAction a
       }
     }
 
-    auto pType = pNewParent->GetTypeAccessor().GetType();
-    auto pAdapter = GetAdapter(pType);
-    auto pDoc = m_pDocumentTree->GetDocument();
     auto pHistory = pDoc->GetCommandHistory();
     pHistory->StartTransaction("Reparent Object");
-
 
     ezStatus res(EZ_SUCCESS);
     for (ezUInt32 i = 0; i < Dragged.GetCount(); ++i)
     {
       ezMoveObjectCommand cmd;
       cmd.m_Object = Dragged[i]->GetGuid();
-      cmd.m_Index = row;
-      cmd.m_sParentProperty = pAdapter->GetChildProperty();
-      cmd.m_NewParent = pNewParent->GetGuid();
+      cmd.m_Index = info.m_iTargetObjectInsertChildIndex;
+      cmd.m_sParentProperty = info.m_pAdapter->GetChildProperty();
+      cmd.m_NewParent = pTarget->GetGuid();
 
       res = pHistory->AddCommand(cmd);
       if (res.m_Result.Failed())

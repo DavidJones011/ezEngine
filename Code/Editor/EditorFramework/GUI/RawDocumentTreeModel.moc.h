@@ -4,6 +4,8 @@
 #include <QAbstractItemModel>
 #include <ToolsFoundation/Object/DocumentObjectManager.h>
 
+class ezDragDropInfo;
+
 /// \brief Adapter that defines data for specific type in the ezQtDocumentTreeModel.
 ///
 /// Adapters are defined for a given type and define the property for child elements (needs to be array or set).
@@ -96,6 +98,8 @@ public:
   /// \brief Enable drag&drop support, disabled by default.
   void SetAllowDragDrop(bool bAllow);
 
+  static bool MoveObjects(const ezDragDropInfo& info);
+
 public: // QAbstractItemModel
   virtual QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
   virtual QModelIndex parent(const QModelIndex& child) const override;
@@ -130,5 +134,6 @@ protected:
   const ezUuid m_root;
   ezHashTable<const ezRTTI*, ezQtDocumentTreeModelAdapter*> m_Adapters;
   bool m_bAllowDragDrop = false;
+  ezString m_sTargetContext = "scenetree";
 };
 

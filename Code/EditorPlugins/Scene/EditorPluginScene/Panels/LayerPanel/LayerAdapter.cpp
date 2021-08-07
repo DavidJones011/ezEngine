@@ -119,6 +119,7 @@ ezQtLayerModel::ezQtLayerModel(ezScene2Document* pDocument)
   : ezQtDocumentTreeModel(pDocument->GetSceneObjectManager(), pDocument->GetSettingsObject()->GetGuid())
   , m_pDocument(pDocument)
 {
+  m_sTargetContext = "layertree";
 }
 
 bool ezQtLayerModel::canDropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) const
@@ -128,10 +129,5 @@ bool ezQtLayerModel::canDropMimeData(const QMimeData* data, Qt::DropAction actio
 
 bool ezQtLayerModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent)
 {
-  // We can't execute the drop because the code is not layer-aware and will try to do the operation on the active document.
-  ezUuid activeDoc = m_pDocument->GetActiveLayer();
-  m_pDocument->SetActiveLayer(m_pDocument->GetGuid()).LogFailure();
-  bool res = ezQtDocumentTreeModel::dropMimeData(data, action, row, column, parent);
-  m_pDocument->SetActiveLayer(activeDoc).LogFailure();
-  return res;
+  return ezQtDocumentTreeModel::dropMimeData(data, action, row, column, parent);
 }

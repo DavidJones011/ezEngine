@@ -117,7 +117,7 @@ public:
   public:
     Storage(const ezRTTI* pRootType);
 
-    const ezDocument* m_pDocument = nullptr;
+    ezDocument* m_pDocument = nullptr;
     ezDocumentRootObject m_RootObject;
 
     ezHashTable<ezUuid, const ezDocumentObject*> m_GuidToObject;
@@ -134,7 +134,7 @@ public:
 
   ezDocumentObjectManager(const ezRTTI* pRootType = ezDocumentRoot::GetStaticRTTI());
   virtual ~ezDocumentObjectManager();
-  void SetDocument(const ezDocument* pDocument) { m_pObjectStorage->m_pDocument = pDocument; }
+  void SetDocument(ezDocument* pDocument) { m_pObjectStorage->m_pDocument = pDocument; }
 
   // Object Construction / Destruction
   // holds object data
@@ -154,6 +154,7 @@ public:
   const ezDocumentObject* GetObject(const ezUuid& guid) const;
   ezDocumentObject* GetObject(const ezUuid& guid);
   const ezDocument* GetDocument() const { return m_pObjectStorage->m_pDocument; }
+  ezDocument* GetDocument() { return m_pObjectStorage->m_pDocument; }
 
   // Property Change
   ezStatus SetValue(ezDocumentObject* pObject, const char* szProperty, const ezVariant& newValue, ezVariant index = ezVariant());
