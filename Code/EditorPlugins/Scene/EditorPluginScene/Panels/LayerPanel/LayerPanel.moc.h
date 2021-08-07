@@ -4,6 +4,7 @@
 #include <Foundation/Basics.h>
 
 class ezScene2Document;
+class ezQtLayerDelegate;
 
 class ezQtLayerPanel : public ezQtDocumentPanel
 {
@@ -17,7 +18,8 @@ private Q_SLOTS:
   void OnRequestContextMenu(QPoint pos);
 
 private:
-  ezScene2Document* m_pSceneDocument;
-  ezQtDocumentTreeView* m_pTreeWidget;
+  ezQtLayerDelegate* m_pDelegate = nullptr;
+  ezScene2Document* m_pSceneDocument = nullptr;
+  ezQtDocumentTreeView* m_pTreeWidget = nullptr;
   ezString m_sContextMenuMapping;
 };

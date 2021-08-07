@@ -4,12 +4,12 @@
 #include <GuiFoundation/Models/TreeSearchFilterModel.moc.h>
 
 ezQtDocumentTreeView::ezQtDocumentTreeView(QWidget* parent)
-  : QTreeView(parent)
+  : ezQtItemView<QTreeView>(parent)
 {
 }
 
 ezQtDocumentTreeView::ezQtDocumentTreeView(QWidget* pParent, ezDocument* pDocument, std::unique_ptr<ezQtDocumentTreeModel> pModel, ezSelectionManager* pSelection)
-  : QTreeView(pParent)
+  : ezQtItemView<QTreeView>(pParent)
 {
   Initialize(pDocument, std::move(pModel), pSelection);
 }

@@ -5,11 +5,12 @@
 #include <QTreeView>
 #include <ToolsFoundation/Selection/SelectionManager.h>
 #include <memory>
+#include <GuiFoundation/Widgets/ItemView.moc.h>
 
 class ezQtTreeSearchFilterModel;
 class ezSelectionManager;
 
-class EZ_EDITORFRAMEWORK_DLL ezQtDocumentTreeView : public QTreeView
+class EZ_EDITORFRAMEWORK_DLL ezQtDocumentTreeView : public ezQtItemView<QTreeView>
 {
   Q_OBJECT
 

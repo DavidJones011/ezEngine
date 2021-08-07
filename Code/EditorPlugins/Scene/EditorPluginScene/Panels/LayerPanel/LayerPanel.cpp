@@ -14,6 +14,7 @@ ezQtLayerPanel::ezQtLayerPanel(QWidget* pParent, ezScene2Document* pDocument)
   setObjectName("LayerPanel");
   setWindowTitle("Layers");
   m_pSceneDocument = pDocument;
+  m_pDelegate = new ezQtLayerDelegate(this, pDocument);
 
   std::unique_ptr<ezQtLayerModel> pModel(new ezQtLayerModel(m_pSceneDocument));
   pModel->AddAdapter(new ezQtDummyAdapter(pDocument->GetSceneObjectManager(), ezGetStaticRTTI<ezSceneDocumentSettings>(), "Layers"));
@@ -23,6 +24,7 @@ ezQtLayerPanel::ezQtLayerPanel(QWidget* pParent, ezScene2Document* pDocument)
   m_pTreeWidget->SetAllowDragDrop(true);
   m_pTreeWidget->SetAllowDeleteObjects(false);
   m_pTreeWidget->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
+  m_pTreeWidget->setItemDelegate(m_pDelegate);
 
   m_pTreeWidget->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
   EZ_VERIFY(connect(m_pTreeWidget, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(OnRequestContextMenu(QPoint))) != nullptr,
@@ -45,3 +47,4 @@ void ezQtLayerPanel::OnRequestContextMenu(QPoint pos)
 
   menu.exec(m_pTreeWidget->mapToGlobal(pos));
 }
+

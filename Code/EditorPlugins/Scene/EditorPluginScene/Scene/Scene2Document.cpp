@@ -616,6 +616,12 @@ bool ezScene2Document::IsLayerLoaded(const ezUuid& layerGuid) const
 
 ezStatus ezScene2Document::SetLayerLoaded(const ezUuid& layerGuid, bool bLoaded)
 {
+  if (GetGameMode() != GameMode::Enum::Off)
+    return ezStatus("Simulation must be stopped to change a layer's loaded state.");
+
+  if (layerGuid == GetGuid())
+    return ezStatus("Cannot unload the scene itself.");
+
   // We can't unload the active layer
   if (!bLoaded && m_ActiveLayerGuid == layerGuid)
   {
