@@ -22,7 +22,7 @@ EZ_BEGIN_DYNAMIC_REFLECTED_TYPE(ezSceneContext, 1, ezRTTIDefaultAllocator<ezScen
 {
   EZ_BEGIN_PROPERTIES
   {
-    EZ_CONSTANT_PROPERTY("DocumentType", (const char*) "Scene;Scene2;Prefab;PropertyAnim"),
+    EZ_CONSTANT_PROPERTY("DocumentType", (const char*) "Scene;Prefab;PropertyAnim"),
   }
   EZ_END_PROPERTIES;
 }
@@ -100,7 +100,10 @@ void ezSceneContext::UpdateInvisibleLayerTags()
 
     for (ezEngineProcessViewContext* pView : m_ViewContexts)
     {
-      static_cast<ezSceneViewContext*>(pView)->SetInvisibleLayerTags(m_InvisibleLayerTags.GetArrayPtr(), newInvisibleLayerTags.GetArrayPtr());
+      if (pView)
+      {
+        static_cast<ezSceneViewContext*>(pView)->SetInvisibleLayerTags(m_InvisibleLayerTags.GetArrayPtr(), newInvisibleLayerTags.GetArrayPtr());
+      }
     }
     m_InvisibleLayerTags.Swap(newInvisibleLayerTags);
   }

@@ -1,9 +1,10 @@
 #include <EditorPluginScenePCH.h>
 
+#include <EditorFramework/Assets/AssetCurator.h>
 #include <EditorPluginScene/Actions/LayerActions.h>
+#include <EditorPluginScene/Scene/Scene2Document.h>
 #include <GuiFoundation/Action/ActionManager.h>
 #include <GuiFoundation/Action/ActionMapManager.h>
-#include <EditorPluginScene/Scene/Scene2Document.h>
 #include <QInputDialog>
 
 
@@ -84,7 +85,6 @@ ezLayerAction::ezLayerAction(const ezActionContext& context, const char* szName,
     case ActionType::LayerVisible:
       SetCheckable(true);
       break;
-
   }
 
   UpdateEnableState();
@@ -98,10 +98,53 @@ ezLayerAction::~ezLayerAction()
   m_pSceneDocument->m_LayerEvents.RemoveEventHandler(ezMakeDelegate(&ezLayerAction::LayerEventHandler, this));
 }
 
+void ezLayerAction::ToggleLayerLoaded(ezScene2Document* pSceneDocument, ezUuid layerGuid)
+{
+  bool bLoad = !pSceneDocument->IsLayerLoaded(layerGuid);
+  if (!bLoad)
+  {
+    ezSceneDocument* pLayer = pSceneDocument->GetLayerDocument(layerGuid);
+    if (pLayer && pLayer->IsModified())
+    {
+      ezStringBuilder sMsg;
+      ezStringBuilder sLayerName = "<Unknown>";
+      {
+        const ezAssetCurator::ezLockedSubAsset subAsset = ezAssetCurator::GetSingleton()->GetSubAsset(layerGuid);
+        if (subAsset.isValid())
+        {
+          sLayerName = subAsset->GetName();
+        }
+      }
+      sMsg.Format("The layer '{}' has been modified.\nSave before unloading?", sLayerName);
+      QMessageBox::StandardButton res = ezQtUiServices::MessageBoxQuestion(sMsg, QMessageBox::StandardButton::Yes | QMessageBox::StandardButton::No | QMessageBox::StandardButton::Cancel, QMessageBox::StandardButton::No);
+      switch (res)
+      {
+        case QMessageBox::Yes:
+        {
+          ezStatus saveRes = pLayer->SaveDocument();
+          if (saveRes.Failed())
+          {
+            saveRes.LogFailure();
+            return;
+          }
+        }
+        break;
+        case QMessageBox::Cancel:
+          return;
+        case QMessageBox::Default:
+          break;
+      }
+    }
+  }
+
+  pSceneDocument->SetLayerLoaded(layerGuid, bLoad).LogFailure();
+  pSceneDocument->SetActiveLayer(layerGuid);
+}
+
 void ezLayerAction::Execute(const ezVariant& value)
 {
   ezUuid layerGuid = GetCurrentSelectedLayer();
-  
+
   switch (m_Type)
   {
     case ActionType::CreateLayer:
@@ -133,9 +176,7 @@ void ezLayerAction::Execute(const ezVariant& value)
     case ActionType::LayerLoaded:
     {
       ezUuid layerGuid = GetCurrentSelectedLayer();
-      bool bLoad = !m_pSceneDocument->IsLayerLoaded(layerGuid);
-      m_pSceneDocument->SetLayerLoaded(layerGuid, bLoad).LogFailure();
-      m_pSceneDocument->SetActiveLayer(layerGuid);
+      ToggleLayerLoaded(m_pSceneDocument, layerGuid);
       return;
     }
     case ActionType::LayerVisible:

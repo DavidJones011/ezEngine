@@ -256,13 +256,16 @@ void ezScene2Document::DocumentManagerEventHandler(const ezDocumentManager::Even
   {
     case ezDocumentManager::Event::Type::DocumentOpened:
     {
-      if (e.m_pDocument->GetDynamicRTTI()->IsDerivedFrom<ezSceneDocument>())
+      if (ezLayerDocument* pLayer = ezDynamicCast<ezLayerDocument*>(e.m_pDocument))
       {
+        if (pLayer->GetHostDocument() != this)
+          return;
+
         ezUuid layerGuid = e.m_pDocument->GetGuid();
         LayerInfo* pInfo = nullptr;
         if (m_Layers.TryGetValue(layerGuid, pInfo))
         {
-          pInfo->m_pLayer = static_cast<ezSceneDocument*>(e.m_pDocument);
+          pInfo->m_pLayer = pLayer;
 
           ezScene2LayerEvent e;
           e.m_Type = ezScene2LayerEvent::Type::LayerLoaded;
@@ -619,7 +622,7 @@ ezStatus ezScene2Document::SetLayerLoaded(const ezUuid& layerGuid, bool bLoaded)
   if (GetGameMode() != GameMode::Enum::Off)
     return ezStatus("Simulation must be stopped to change a layer's loaded state.");
 
-  if (layerGuid == GetGuid())
+  if (layerGuid == GetGuid() && !bLoaded)
     return ezStatus("Cannot unload the scene itself.");
 
   // We can't unload the active layer
@@ -659,6 +662,11 @@ ezStatus ezScene2Document::SetLayerLoaded(const ezUuid& layerGuid, bool bLoaded)
     ezDocumentObject* pRoot = m_pSceneObjectManager->GetRootObject();
     if (ezDocument* pDoc = ezQtEditorApp::GetSingleton()->OpenDocument(sAbsPath, ezDocumentFlags::None, pRoot))
     {
+      if (layerGuid != GetGuid() && pDoc->GetHostDocument() != this)
+      {
+        return ezStatus("Layer already open in another window.");
+      }
+
       pInfo->m_pLayer = ezDynamicCast<ezSceneDocument*>(pDoc);
 
       ezScene2LayerEvent e;

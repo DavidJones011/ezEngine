@@ -12,9 +12,26 @@ EZ_BEGIN_DYNAMIC_REFLECTED_TYPE(ezLayerContext, 1, ezRTTIDefaultAllocator<ezLaye
     EZ_CONSTANT_PROPERTY("DocumentType", (const char*) "Layer"),
   }
   EZ_END_PROPERTIES;
+  EZ_BEGIN_FUNCTIONS
+  {
+    EZ_FUNCTION_PROPERTY(AllocateContext),
+  }
+  EZ_END_FUNCTIONS;
 }
 EZ_END_DYNAMIC_REFLECTED_TYPE;
 // clang-format on
+
+ezEngineProcessDocumentContext* ezLayerContext::AllocateContext(const ezDocumentOpenMsgToEngine* pMsg)
+{
+  if (pMsg->m_DocumentMetaData.IsA<ezUuid>())
+  {
+    return ezGetStaticRTTI<ezLayerContext>()->GetAllocator()->Allocate<ezEngineProcessDocumentContext>();
+  }
+  else
+  {
+    return ezGetStaticRTTI<ezSceneContext>()->GetAllocator()->Allocate<ezEngineProcessDocumentContext>();
+  }
+}
 
 ezLayerContext::ezLayerContext()
   : ezEngineProcessDocumentContext(ezEngineProcessDocumentContextFlags::None)

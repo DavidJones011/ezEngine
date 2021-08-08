@@ -1166,7 +1166,6 @@ void ezSceneDocument::DocumentObjectMetaDataEventHandler(const ezObjectMetaData<
     msg.m_sTag = "EditorHidden";
     msg.m_bApplyOnAllChildren = true;
 
-    //#TODO scene2 handling across layers
     SendObjectMsg(GetObjectManager()->GetObject(e.m_ObjectKey), &msg);
   }
 }

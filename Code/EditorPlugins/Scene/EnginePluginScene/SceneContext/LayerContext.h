@@ -5,12 +5,14 @@
 #include <RendererCore/Pipeline/Declarations.h>
 #include <SharedPluginScene/Common/Messages.h>
 
+class ezDocumentOpenMsgToEngine;
 
 class EZ_ENGINEPLUGINSCENE_DLL ezLayerContext : public ezEngineProcessDocumentContext
 {
   EZ_ADD_DYNAMIC_REFLECTION(ezLayerContext, ezEngineProcessDocumentContext);
 
 public:
+  static ezEngineProcessDocumentContext* AllocateContext(const ezDocumentOpenMsgToEngine* pMsg);
   ezLayerContext();
   ~ezLayerContext();
 

@@ -42,6 +42,7 @@ public:
   ezLayerAction(const ezActionContext& context, const char* szName, ActionType type);
   ~ezLayerAction();
 
+  static void ToggleLayerLoaded(ezScene2Document* m_pSceneDocument, ezUuid layerGuid);
   virtual void Execute(const ezVariant& value) override;
 
 private:

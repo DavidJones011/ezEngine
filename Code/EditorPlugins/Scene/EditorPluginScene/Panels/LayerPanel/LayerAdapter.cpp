@@ -1,9 +1,10 @@
 #include <EditorPluginScenePCH.h>
 
-#include <EditorPluginScene/Panels/LayerPanel/LayerAdapter.moc.h>
 #include <EditorFramework/Assets/AssetCurator.h>
-#include <GuiFoundation/UIServices/UIServices.moc.h>
+#include <EditorPluginScene/Actions/LayerActions.h>
+#include <EditorPluginScene/Panels/LayerPanel/LayerAdapter.moc.h>
 #include <EditorPluginScene/Scene/Scene2Document.h>
+#include <GuiFoundation/UIServices/UIServices.moc.h>
 
 ezQtLayerAdapter::ezQtLayerAdapter(ezScene2Document* pDocument)
   : ezQtDocumentTreeModelAdapter(pDocument->GetSceneObjectManager(), ezGetStaticRTTI<ezSceneLayer>(), nullptr)
@@ -124,7 +125,7 @@ void ezQtLayerAdapter::DocumentEventHander(const ezDocumentEvent& e)
 
 //////////////////////////////////////////////////////////////////////////
 
- ezQtLayerDelegate::ezQtLayerDelegate(QObject* pParent, ezScene2Document* pDocument)
+ezQtLayerDelegate::ezQtLayerDelegate(QObject* pParent, ezScene2Document* pDocument)
   : ezQtItemDelegate(pParent)
   , m_pDocument(pDocument)
 {
@@ -160,8 +161,7 @@ bool ezQtLayerDelegate::mouseReleaseEvent(QMouseEvent* event, const QStyleOption
       const ezUuid layerGuid = index.data(ezQtLayerAdapter::UserRoles::LayerGuid).value<ezUuid>();
       if (layerGuid != m_pDocument->GetGuid())
       {
-        const bool bLoaded = !m_pDocument->IsLayerLoaded(layerGuid);
-        m_pDocument->SetLayerLoaded(layerGuid, bLoaded).LogFailure();
+        ezLayerAction::ToggleLayerLoaded(m_pDocument, layerGuid);
       }
     }
     m_bPressed = false;

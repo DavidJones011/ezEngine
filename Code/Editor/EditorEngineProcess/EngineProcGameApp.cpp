@@ -391,8 +391,27 @@ ezEngineProcessDocumentContext* ezEngineProcessGameApplication::CreateDocumentCo
           if (sDocTypes.FindSubString(sRequestedType) != nullptr)
           {
             ezLog::Dev("Created Context of type '{0}' for '{1}'", pRtti->GetTypeName(), pMsg->m_sDocumentType);
+            for (ezAbstractFunctionProperty* pFunc : pRtti->GetFunctions())
+            {
+              if (ezStringUtils::IsEqual(pFunc->GetPropertyName(), "AllocateContext"))
+              {
+                ezVariant res;
+                ezHybridArray<ezVariant, 1> params;
+                params.PushBack(pMsg);
+                pFunc->Execute(nullptr, params, res);
+                if (res.IsA<ezEngineProcessDocumentContext*>())
+                {
+                  pDocumentContext = res.Get<ezEngineProcessDocumentContext*>();
+                }
+                else
+                {
+                  ezLog::Error("Failed to call custom allocator '{}::{}'.", pRtti->GetTypeName(), pFunc->GetPropertyName());
+                }
+              }
+            }
 
-            pDocumentContext = pRtti->GetAllocator()->Allocate<ezEngineProcessDocumentContext>();
+            if (!pDocumentContext)
+              pDocumentContext = pRtti->GetAllocator()->Allocate<ezEngineProcessDocumentContext>();
 
             ezEngineProcessDocumentContext::AddDocumentContext(pMsg->m_DocumentGuid, pMsg->m_DocumentMetaData, pDocumentContext, &m_IPC);
             break;

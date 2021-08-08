@@ -17,7 +17,7 @@ ezSceneDocumentManager::ezSceneDocumentManager()
     docTypeDesc.m_sDocumentTypeName = "Scene";
     docTypeDesc.m_sFileExtension = "ezScene";
     docTypeDesc.m_sIcon = ":/AssetIcons/Scene.png";
-    docTypeDesc.m_pDocumentType = ezGetStaticRTTI<ezSceneDocument>();
+    docTypeDesc.m_pDocumentType = ezGetStaticRTTI<ezScene2Document>();
     docTypeDesc.m_pManager = this;
 
     docTypeDesc.m_sResourceFileExtension = "ezObjectGraph";
@@ -38,27 +38,13 @@ ezSceneDocumentManager::ezSceneDocumentManager()
     docTypeDesc.m_AssetDocumentFlags = ezAssetDocumentFlags::AutoTransformOnSave | ezAssetDocumentFlags::SupportsThumbnail;
   }
 
-  // Document type descriptor for a scene with layers
-  {
-    auto& docTypeDesc = m_DocTypeDescs.ExpandAndGetRef();
-    docTypeDesc.m_sDocumentTypeName = "Scene2";
-    docTypeDesc.m_sFileExtension = "ezScene2";
-    docTypeDesc.m_sIcon = ":/AssetIcons/Scene.png";
-    docTypeDesc.m_pDocumentType = ezGetStaticRTTI<ezSceneDocument>();
-    docTypeDesc.m_pManager = this;
-
-    // We currently serialize all layers into one final runtime scene
-    docTypeDesc.m_sResourceFileExtension = "ezObjectGraph";
-    docTypeDesc.m_AssetDocumentFlags = ezAssetDocumentFlags::OnlyTransformManually | ezAssetDocumentFlags::SupportsThumbnail;
-  }
-
   // Document type descriptor for a layer (similar to a normal scene) as it holds a scene object graph
   {
     auto& docTypeDesc = m_DocTypeDescs.ExpandAndGetRef();
     docTypeDesc.m_sDocumentTypeName = "Layer";
     docTypeDesc.m_sFileExtension = "ezSceneLayer";
     docTypeDesc.m_sIcon = ":/AssetIcons/Layer.png";
-    docTypeDesc.m_pDocumentType = ezGetStaticRTTI<ezSceneDocument>();
+    docTypeDesc.m_pDocumentType = ezGetStaticRTTI<ezLayerDocument>();
     docTypeDesc.m_pManager = this;
 
     docTypeDesc.m_sResourceFileExtension = "";
@@ -73,15 +59,6 @@ void ezSceneDocumentManager::InternalCreateDocument(
 {
   if (ezStringUtils::IsEqual(szDocumentTypeName, "Scene"))
   {
-    out_pDocument = new ezSceneDocument(szPath, ezSceneDocument::DocumentType::Scene);
-
-    if (bCreateNewDocument)
-    {
-      SetupDefaultScene(out_pDocument);
-    }
-  }
-  else if (ezStringUtils::IsEqual(szDocumentTypeName, "Scene2"))
-  {
     out_pDocument = new ezScene2Document(szPath);
 
     if (bCreateNewDocument)
@@ -95,9 +72,17 @@ void ezSceneDocumentManager::InternalCreateDocument(
   }
   else if (ezStringUtils::IsEqual(szDocumentTypeName, "Layer"))
   {
-    EZ_ASSERT_DEV(pOpenContext, "Opening a Layer needs an pOpenContext provided by the parent ezScene2Document.");
-    ezScene2Document* pDoc = const_cast<ezScene2Document*>(ezDynamicCast<const ezScene2Document*>(pOpenContext->GetDocumentObjectManager()->GetDocument()));
-    out_pDocument = new ezLayerDocument(szPath, pDoc);
+    if (pOpenContext == nullptr)
+    {
+      // Opened individually
+      out_pDocument = new ezSceneDocument(szPath, ezSceneDocument::DocumentType::Layer);
+    }
+    else
+    {
+      // Opened via a parent scene document
+      ezScene2Document* pDoc = const_cast<ezScene2Document*>(ezDynamicCast<const ezScene2Document*>(pOpenContext->GetDocumentObjectManager()->GetDocument()));
+      out_pDocument = new ezLayerDocument(szPath, pDoc);
+    }
   }
 }
 
