@@ -392,11 +392,11 @@ ezStatus ezInstantiatePrefabCommand::DoInternal(bool bRedo)
       // if prefabs are not allowed in this document, just create this as a regular object, with no link to the prefab template
       if (pDocument->ArePrefabsAllowed())
       {
-        auto pMeta = pDocument->m_DocumentObjectMetaData.BeginModifyMetaData(m_CreatedRootObject);
+        auto pMeta = pDocument->m_DocumentObjectMetaData->BeginModifyMetaData(m_CreatedRootObject);
         pMeta->m_CreateFromPrefab = m_CreateFromPrefab;
         pMeta->m_PrefabSeedGuid = m_RemapGuid;
         pMeta->m_sBasePrefab = m_sBasePrefabGraph;
-        pDocument->m_DocumentObjectMetaData.EndModifyMetaData(ezDocumentObjectMetaData::PrefabFlag);
+        pDocument->m_DocumentObjectMetaData->EndModifyMetaData(ezDocumentObjectMetaData::PrefabFlag);
       }
       else
       {
@@ -507,20 +507,20 @@ ezStatus ezUnlinkPrefabCommand::DoInternal(bool bRedo)
   // store previous values
   if (!bRedo)
   {
-    auto pMeta = pDocument->m_DocumentObjectMetaData.BeginReadMetaData(m_Object);
+    auto pMeta = pDocument->m_DocumentObjectMetaData->BeginReadMetaData(m_Object);
     m_OldCreateFromPrefab = pMeta->m_CreateFromPrefab;
     m_OldRemapGuid = pMeta->m_PrefabSeedGuid;
     m_sOldGraphTextFormat = pMeta->m_sBasePrefab;
-    pDocument->m_DocumentObjectMetaData.EndReadMetaData();
+    pDocument->m_DocumentObjectMetaData->EndReadMetaData();
   }
 
   // unlink
   {
-    auto pMeta = pDocument->m_DocumentObjectMetaData.BeginModifyMetaData(m_Object);
+    auto pMeta = pDocument->m_DocumentObjectMetaData->BeginModifyMetaData(m_Object);
     pMeta->m_CreateFromPrefab = ezUuid();
     pMeta->m_PrefabSeedGuid = ezUuid();
     pMeta->m_sBasePrefab.Clear();
-    pDocument->m_DocumentObjectMetaData.EndModifyMetaData(ezDocumentObjectMetaData::PrefabFlag);
+    pDocument->m_DocumentObjectMetaData->EndModifyMetaData(ezDocumentObjectMetaData::PrefabFlag);
   }
 
   return ezStatus(EZ_SUCCESS);
@@ -536,11 +536,11 @@ ezStatus ezUnlinkPrefabCommand::UndoInternal(bool bFireEvents)
 
   // restore link
   {
-    auto pMeta = pDocument->m_DocumentObjectMetaData.BeginModifyMetaData(m_Object);
+    auto pMeta = pDocument->m_DocumentObjectMetaData->BeginModifyMetaData(m_Object);
     pMeta->m_CreateFromPrefab = m_OldCreateFromPrefab;
     pMeta->m_PrefabSeedGuid = m_OldRemapGuid;
     pMeta->m_sBasePrefab = m_sOldGraphTextFormat;
-    pDocument->m_DocumentObjectMetaData.EndModifyMetaData(ezDocumentObjectMetaData::PrefabFlag);
+    pDocument->m_DocumentObjectMetaData->EndModifyMetaData(ezDocumentObjectMetaData::PrefabFlag);
   }
 
   return ezStatus(EZ_SUCCESS);

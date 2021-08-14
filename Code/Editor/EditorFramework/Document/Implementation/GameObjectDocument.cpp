@@ -305,7 +305,7 @@ void ezGameObjectDocument::QueryCachedNodeName(
   const ezDocumentObject* pObject, ezStringBuilder& out_Result, ezUuid* out_pPrefabGuid, QIcon* out_pIcon /*= nullptr*/) const
 {
   auto pMetaScene = m_GameObjectMetaData.BeginReadMetaData(pObject->GetGuid());
-  auto pMetaDoc = m_DocumentObjectMetaData.BeginReadMetaData(pObject->GetGuid());
+  auto pMetaDoc = m_DocumentObjectMetaData->BeginReadMetaData(pObject->GetGuid());
   const ezUuid prefabGuid = pMetaDoc->m_CreateFromPrefab;
 
   if (out_pPrefabGuid != nullptr)
@@ -314,7 +314,7 @@ void ezGameObjectDocument::QueryCachedNodeName(
   out_Result = pMetaScene->m_CachedNodeName;
 
   m_GameObjectMetaData.EndReadMetaData();
-  m_DocumentObjectMetaData.EndReadMetaData();
+  m_DocumentObjectMetaData->EndReadMetaData();
 
   if (out_Result.IsEmpty())
   {
@@ -893,7 +893,7 @@ void ezGameObjectDocument::ObjectEventHandler(const ezDocumentObjectEvent& e)
         // GUID may exist the same GUID is in use, when a prefab is recreated (updated) and the GUIDs are restored, such that references
         // don't change the object that is being destroyed is typically referenced by a command that was in the redo-queue that got purged
 
-        m_DocumentObjectMetaData.ClearMetaData(e.m_pObject->GetGuid());
+        m_DocumentObjectMetaData->ClearMetaData(e.m_pObject->GetGuid());
         m_GameObjectMetaData.ClearMetaData(e.m_pObject->GetGuid());
       }
     }

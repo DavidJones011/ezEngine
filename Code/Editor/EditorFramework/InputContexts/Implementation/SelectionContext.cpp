@@ -340,7 +340,7 @@ static const ezDocumentObject* GetPrefabParentOrSelf(const ezDocumentObject* pOb
 {
   const ezDocumentObject* pParent = pObject;
   const ezDocument* pDocument = pObject->GetDocumentObjectManager()->GetDocument();
-  const auto& metaData = pDocument->m_DocumentObjectMetaData;
+  const auto& metaData = *pDocument->m_DocumentObjectMetaData;
 
   while (pParent != nullptr)
   {

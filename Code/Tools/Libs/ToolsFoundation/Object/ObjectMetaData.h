@@ -10,11 +10,28 @@ template <typename KEY, typename VALUE>
 class ezObjectMetaData
 {
 public:
+
   struct EventData
   {
     KEY m_ObjectKey;
     const VALUE* m_pValue;
     ezUInt32 m_uiModifiedFlags;
+  };
+
+  ezEvent<const EventData&> m_DataModifiedEvent;
+
+  // \brief Storage for the meta data so it can be swapped when using multiple sub documents
+  class Storage : public ezRefCounted
+  {
+  public:
+    mutable enum class AccessMode { Nothing,
+      Read,
+      Write } m_AccessMode;
+    mutable KEY m_AcessingKey;
+    mutable ezMutex m_Mutex;
+    ezHashTable<KEY, VALUE> m_MetaData;
+
+    ezEvent<const EventData&> m_DataModifiedEvent;
   };
 
   ezObjectMetaData();
@@ -30,9 +47,8 @@ public:
   VALUE* BeginModifyMetaData(const KEY ObjectKey);
   void EndModifyMetaData(ezUInt32 uiModifiedFlags = 0xFFFFFFFF);
 
-  ezEvent<const EventData&> m_DataModifiedEvent;
 
-  ezMutex& GetMutex() const { return m_Mutex; }
+  ezMutex& GetMutex() const { return m_pMetaStorage->m_Mutex; }
 
   const VALUE& GetDefaultValue() const { return m_DefaultValue; }
 
@@ -43,12 +59,13 @@ public:
   /// \brief Uses reflection information from VALUE to restore all meta data properties from the graph.
   void RestoreMetaDataFromAbstractGraph(const ezAbstractObjectGraph& graph);
 
+  ezSharedPtr<ezObjectMetaData<KEY, VALUE>::Storage> SwapStorage(ezSharedPtr<ezObjectMetaData<KEY, VALUE>::Storage> pNewStorage);
+  ezSharedPtr<ezObjectMetaData<KEY, VALUE>::Storage> GetStorage() { return m_pMetaStorage; }
+
 private:
   VALUE m_DefaultValue;
-  mutable enum class AccessMode { Nothing, Read, Write } m_AccessMode;
-  mutable KEY m_AcessingKey;
-  mutable ezMutex m_Mutex;
-  ezHashTable<KEY, VALUE> m_MetaData;
+  ezSharedPtr<ezObjectMetaData<KEY, VALUE>::Storage> m_pMetaStorage;
+  typename ezEvent<const EventData&>::Unsubscriber m_EventsUnsubscriber;
 };
 
 #include <ToolsFoundation/Object/Implementation/ObjectMetaData_inl.h>

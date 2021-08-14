@@ -53,7 +53,7 @@ void ezSceneDocument::InitializeAfterLoading(bool bFirstTimeCreation)
   SUPER::InitializeAfterLoading(bFirstTimeCreation);
   EnsureSettingsObjectExist();
 
-  m_DocumentObjectMetaData.m_DataModifiedEvent.AddEventHandler(ezMakeDelegate(&ezSceneDocument::DocumentObjectMetaDataEventHandler, this));
+  m_DocumentObjectMetaData->m_DataModifiedEvent.AddEventHandler(ezMakeDelegate(&ezSceneDocument::DocumentObjectMetaDataEventHandler, this));
   ezToolsProject::s_Events.AddEventHandler(ezMakeDelegate(&ezSceneDocument::ToolsProjectEventHandler, this));
   ezEditorEngineProcessConnection::GetSingleton()->s_Events.AddEventHandler(ezMakeDelegate(&ezSceneDocument::EngineConnectionEventHandler, this));
 
@@ -64,7 +64,7 @@ void ezSceneDocument::InitializeAfterLoading(bool bFirstTimeCreation)
 
 ezSceneDocument::~ezSceneDocument()
 {
-  m_DocumentObjectMetaData.m_DataModifiedEvent.RemoveEventHandler(ezMakeDelegate(&ezSceneDocument::DocumentObjectMetaDataEventHandler, this));
+  m_DocumentObjectMetaData->m_DataModifiedEvent.RemoveEventHandler(ezMakeDelegate(&ezSceneDocument::DocumentObjectMetaDataEventHandler, this));
 
   ezToolsProject::s_Events.RemoveEventHandler(ezMakeDelegate(&ezSceneDocument::ToolsProjectEventHandler, this));
 
@@ -467,14 +467,14 @@ void ezSceneDocument::ShowOrHideSelectedObjects(ShowOrHide action)
       // if (!pObj->GetTypeAccessor().GetType()->IsDerivedFrom<ezGameObject>())
       // return;
 
-      auto pMeta = m_DocumentObjectMetaData.BeginModifyMetaData(pObj->GetGuid());
+      auto pMeta = m_DocumentObjectMetaData->BeginModifyMetaData(pObj->GetGuid());
       if (pMeta->m_bHidden != bHide)
       {
         pMeta->m_bHidden = bHide;
-        m_DocumentObjectMetaData.EndModifyMetaData(ezDocumentObjectMetaData::HiddenFlag);
+        m_DocumentObjectMetaData->EndModifyMetaData(ezDocumentObjectMetaData::HiddenFlag);
       }
       else
-        m_DocumentObjectMetaData.EndModifyMetaData(0);
+        m_DocumentObjectMetaData->EndModifyMetaData(0);
     });
   }
 }
@@ -670,7 +670,7 @@ void ezSceneDocument::ShowOrHideAllObjects(ShowOrHide action)
 
     ezUInt32 uiFlags = 0;
 
-    auto pMeta = m_DocumentObjectMetaData.BeginModifyMetaData(pObj->GetGuid());
+    auto pMeta = m_DocumentObjectMetaData->BeginModifyMetaData(pObj->GetGuid());
 
     if (pMeta->m_bHidden != bHide)
     {
@@ -678,7 +678,7 @@ void ezSceneDocument::ShowOrHideAllObjects(ShowOrHide action)
       uiFlags = ezDocumentObjectMetaData::HiddenFlag;
     }
 
-    m_DocumentObjectMetaData.EndModifyMetaData(uiFlags);
+    m_DocumentObjectMetaData->EndModifyMetaData(uiFlags);
   });
 }
 void ezSceneDocument::GetSupportedMimeTypesForPasting(ezHybridArray<ezString, 4>& out_MimeTypes) const
@@ -801,7 +801,7 @@ bool ezSceneDocument::Paste(const ezArrayPtr<PasteInfo>& info, const ezAbstractO
       return false;
   }
 
-  m_DocumentObjectMetaData.RestoreMetaDataFromAbstractGraph(objectGraph);
+  m_DocumentObjectMetaData->RestoreMetaDataFromAbstractGraph(objectGraph);
   m_GameObjectMetaData.RestoreMetaDataFromAbstractGraph(objectGraph);
 
   // set the pasted objects as the new selection
@@ -826,7 +826,7 @@ bool ezSceneDocument::DuplicateSelectedObjects(const ezArrayPtr<PasteInfo>& info
   if (!PasteAtOrignalPosition(info, objectGraph))
     return false;
 
-  m_DocumentObjectMetaData.RestoreMetaDataFromAbstractGraph(objectGraph);
+  m_DocumentObjectMetaData->RestoreMetaDataFromAbstractGraph(objectGraph);
   m_GameObjectMetaData.RestoreMetaDataFromAbstractGraph(objectGraph);
 
   // set the pasted objects as the new selection
@@ -1531,8 +1531,8 @@ void ezSceneDocument::SyncObjectHiddenState()
 
 void ezSceneDocument::SyncObjectHiddenState(ezDocumentObject* pObject)
 {
-  const bool bHidden = m_DocumentObjectMetaData.BeginReadMetaData(pObject->GetGuid())->m_bHidden;
-  m_DocumentObjectMetaData.EndReadMetaData();
+  const bool bHidden = m_DocumentObjectMetaData->BeginReadMetaData(pObject->GetGuid())->m_bHidden;
+  m_DocumentObjectMetaData->EndReadMetaData();
 
   ezObjectTagMsgToEngine msg;
   msg.m_bSetTag = bHidden;

@@ -22,7 +22,7 @@ void ezSceneDocument::UnlinkPrefabs(const ezDeque<const ezDocumentObject*>& Sele
 
 bool ezSceneDocument::IsObjectEditorPrefab(const ezUuid& object, ezUuid* out_PrefabAssetGuid) const
 {
-  auto pMeta = m_DocumentObjectMetaData.BeginReadMetaData(object);
+  auto pMeta = m_DocumentObjectMetaData->BeginReadMetaData(object);
   const bool bIsPrefab = pMeta->m_CreateFromPrefab.IsValid();
 
   if (out_PrefabAssetGuid)
@@ -30,7 +30,7 @@ bool ezSceneDocument::IsObjectEditorPrefab(const ezUuid& object, ezUuid* out_Pre
     *out_PrefabAssetGuid = pMeta->m_CreateFromPrefab;
   }
 
-  m_DocumentObjectMetaData.EndReadMetaData();
+  m_DocumentObjectMetaData->EndReadMetaData();
 
   return bIsPrefab;
 }

@@ -221,7 +221,7 @@ public:
   ///@}
 
 public:
-  ezObjectMetaData<ezUuid, ezDocumentObjectMetaData> m_DocumentObjectMetaData;
+  ezUniquePtr<ezObjectMetaData<ezUuid, ezDocumentObjectMetaData>> m_DocumentObjectMetaData;
 
   mutable ezEvent<const ezDocumentEvent&> m_EventsOne;
   static ezEvent<const ezDocumentEvent&> s_EventsAny;

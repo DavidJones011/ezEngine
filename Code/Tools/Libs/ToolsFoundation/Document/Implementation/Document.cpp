@@ -58,6 +58,8 @@ ezEvent<const ezDocumentEvent&> ezDocument::s_EventsAny;
 
 ezDocument::ezDocument(const char* szPath, ezDocumentObjectManager* pDocumentObjectManagerImpl)
 {
+  using ObjectMetaData = ezObjectMetaData<ezUuid, ezDocumentObjectMetaData>;
+  m_DocumentObjectMetaData = EZ_DEFAULT_NEW(ObjectMetaData);
   m_pDocumentInfo = nullptr;
   m_sDocumentPath = szPath;
   m_pObjectManager = ezUniquePtr<ezDocumentObjectManager>(pDocumentObjectManagerImpl, ezFoundation::GetDefaultAllocator());
@@ -344,13 +346,13 @@ ezStatus ezDocument::InternalLoadDocument()
 
 void ezDocument::AttachMetaDataBeforeSaving(ezAbstractObjectGraph& graph) const
 {
-  m_DocumentObjectMetaData.AttachMetaDataToAbstractGraph(graph);
+  m_DocumentObjectMetaData->AttachMetaDataToAbstractGraph(graph);
 }
 
 
 void ezDocument::RestoreMetaDataAfterLoading(const ezAbstractObjectGraph& graph, bool bUndoable)
 {
-  m_DocumentObjectMetaData.RestoreMetaDataFromAbstractGraph(graph);
+  m_DocumentObjectMetaData->RestoreMetaDataFromAbstractGraph(graph);
 }
 
 void ezDocument::SetUnknownObjectTypes(const ezSet<ezString>& Types, ezUInt32 uiInstances)
@@ -426,16 +428,16 @@ ezObjectAccessorBase* ezDocument::GetObjectAccessor() const
 
 ezVariant ezDocument::GetDefaultValue(const ezDocumentObject* pObject, const char* szProperty, ezVariant index) const
 {
-  ezUuid rootObjectGuid = ezPrefabUtils::GetPrefabRoot(pObject, m_DocumentObjectMetaData);
+  ezUuid rootObjectGuid = ezPrefabUtils::GetPrefabRoot(pObject, *m_DocumentObjectMetaData);
 
   const ezAbstractProperty* pProp = pObject->GetTypeAccessor().GetType()->FindPropertyByName(szProperty);
   if (pProp && rootObjectGuid.IsValid())
   {
-    auto pMeta = m_DocumentObjectMetaData.BeginReadMetaData(rootObjectGuid);
+    auto pMeta = m_DocumentObjectMetaData->BeginReadMetaData(rootObjectGuid);
     const ezAbstractObjectGraph* pGraph = ezPrefabCache::GetSingleton()->GetCachedPrefabGraph(pMeta->m_CreateFromPrefab);
     ezUuid objectPrefabGuid = pObject->GetGuid();
     objectPrefabGuid.RevertCombinationWithSeed(pMeta->m_PrefabSeedGuid);
-    m_DocumentObjectMetaData.EndReadMetaData();
+    m_DocumentObjectMetaData->EndReadMetaData();
 
     if (pGraph)
     {
