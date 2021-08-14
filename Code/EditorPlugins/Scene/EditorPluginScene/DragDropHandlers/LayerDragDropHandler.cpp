@@ -132,7 +132,7 @@ void ezGameObjectOnLayerDragDropHandler::OnDrop(const ezDragDropInfo* pInfo)
       }
       {
         EZ_VERIFY(pDoc->SetActiveLayer(pTargetDoc->GetGuid()).Succeeded(), "Failed to set active document.");
-        ezResult res = ezActionManager::ExecuteAction(nullptr, "Selection.Paste", pTargetDoc, ezVariant());
+        ezResult res = ezActionManager::ExecuteAction(nullptr, "Selection.PasteAtOriginalLocation", pTargetDoc, ezVariant());
         if (res.Failed())
         {
           ezLog::Error("Failed to paste selection while moving objects between layers.");

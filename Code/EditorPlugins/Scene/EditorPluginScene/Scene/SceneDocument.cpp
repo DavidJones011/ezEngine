@@ -704,7 +704,10 @@ bool ezSceneDocument::CopySelectedObjects(ezAbstractObjectGraph& graph, ezMap<ez
 
   // TODO: objects are required to be named root but this is not enforced or obvious by the interface.
   for (auto item : Selection)
-    writer.AddObjectToGraph(item, "root");
+  {
+    ezAbstractObjectNode* pNode = writer.AddObjectToGraph(item, "root");
+    pNode->AddProperty("GlobalTransform", GetGlobalTransform(item));
+  }
 
   if (out_pParents != nullptr)
   {
@@ -753,7 +756,7 @@ bool ezSceneDocument::PasteAt(const ezArrayPtr<PasteInfo>& info, const ezVec3& v
   return true;
 }
 
-bool ezSceneDocument::PasteAtOrignalPosition(const ezArrayPtr<PasteInfo>& info)
+bool ezSceneDocument::PasteAtOrignalPosition(const ezArrayPtr<PasteInfo>& info, const ezAbstractObjectGraph& objectGraph)
 {
   for (const PasteInfo& pi : info)
   {
@@ -764,6 +767,16 @@ bool ezSceneDocument::PasteAtOrignalPosition(const ezArrayPtr<PasteInfo>& info)
     else
     {
       GetObjectManager()->AddObject(pi.m_pObject, pi.m_pParent, "Children", pi.m_Index);
+    }
+    if (auto* pNode = objectGraph.GetNode(pi.m_pObject->GetGuid()))
+    {
+      if (auto* pProperty = pNode->FindProperty("GlobalTransform"))
+      {
+        if (pProperty->m_Value.IsA<ezTransform>())
+        {
+          SetGlobalTransform(pi.m_pObject, pProperty->m_Value.Get<ezTransform>(), TransformationChanges::All);
+        }
+      }
     }
   }
 
@@ -784,7 +797,7 @@ bool ezSceneDocument::Paste(const ezArrayPtr<PasteInfo>& info, const ezAbstractO
   }
   else
   {
-    if (!PasteAtOrignalPosition(info))
+    if (!PasteAtOrignalPosition(info, objectGraph))
       return false;
   }
 
@@ -810,7 +823,7 @@ bool ezSceneDocument::Paste(const ezArrayPtr<PasteInfo>& info, const ezAbstractO
 
 bool ezSceneDocument::DuplicateSelectedObjects(const ezArrayPtr<PasteInfo>& info, const ezAbstractObjectGraph& objectGraph, bool bSetSelected)
 {
-  if (!PasteAtOrignalPosition(info))
+  if (!PasteAtOrignalPosition(info, objectGraph))
     return false;
 
   m_DocumentObjectMetaData.RestoreMetaDataFromAbstractGraph(objectGraph);

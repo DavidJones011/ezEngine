@@ -89,7 +89,7 @@ public:
   bool DuplicateSelectedObjects(const ezArrayPtr<PasteInfo>& info, const ezAbstractObjectGraph& objectGraph, bool bSetSelected);
   bool CopySelectedObjects(ezAbstractObjectGraph& graph, ezMap<ezUuid, ezUuid>* out_pParents) const;
   bool PasteAt(const ezArrayPtr<PasteInfo>& info, const ezVec3& vPos);
-  bool PasteAtOrignalPosition(const ezArrayPtr<PasteInfo>& info);
+  bool PasteAtOrignalPosition(const ezArrayPtr<PasteInfo>& info, const ezAbstractObjectGraph& objectGraph);
 
   virtual void UpdatePrefabs() override;
 
