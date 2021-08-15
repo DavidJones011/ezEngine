@@ -13,9 +13,9 @@ void ezSceneDocument::UnlinkPrefabs(const ezDeque<const ezDocumentObject*>& Sele
   // Clear cached names.
   for (auto pObject : Selection)
   {
-    auto pMetaScene = m_GameObjectMetaData.BeginModifyMetaData(pObject->GetGuid());
+    auto pMetaScene = m_GameObjectMetaData->BeginModifyMetaData(pObject->GetGuid());
     pMetaScene->m_CachedNodeName.Clear();
-    m_GameObjectMetaData.EndModifyMetaData(ezGameObjectMetaData::CachedName);
+    m_GameObjectMetaData->EndModifyMetaData(ezGameObjectMetaData::CachedName);
   }
 }
 
@@ -76,7 +76,7 @@ bool ezSceneDocument::IsObjectEnginePrefab(const ezUuid& object, ezUuid* out_Pre
 
 void ezSceneDocument::UpdatePrefabs()
 {
-  EZ_LOCK(m_GameObjectMetaData.GetMutex());
+  EZ_LOCK(m_GameObjectMetaData->GetMutex());
   SUPER::UpdatePrefabs();
 }
 
@@ -86,9 +86,9 @@ ezUuid ezSceneDocument::ReplaceByPrefab(const ezDocumentObject* pRootObject, con
   ezUuid newGuid = SUPER::ReplaceByPrefab(pRootObject, szPrefabFile, PrefabAsset, PrefabSeed, bEnginePrefab);
   if (newGuid.IsValid())
   {
-    auto pMeta = m_GameObjectMetaData.BeginModifyMetaData(newGuid);
+    auto pMeta = m_GameObjectMetaData->BeginModifyMetaData(newGuid);
     pMeta->m_CachedNodeName.Clear();
-    m_GameObjectMetaData.EndModifyMetaData(ezGameObjectMetaData::CachedName);
+    m_GameObjectMetaData->EndModifyMetaData(ezGameObjectMetaData::CachedName);
   }
   return newGuid;
 }

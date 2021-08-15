@@ -140,6 +140,7 @@ private:
   mutable ezUniquePtr<ezSelectionManager> m_sceneSelectionManager;
   mutable ezUniquePtr<ezObjectCommandAccessor> m_pSceneObjectAccessor;
   ezUniquePtr<ezObjectMetaData<ezUuid, ezDocumentObjectMetaData>> m_SceneDocumentObjectMetaData;
+  ezUniquePtr<ezObjectMetaData<ezUuid, ezGameObjectMetaData>> m_SceneGameObjectMetaData;
 
   // Layer state
   mutable ezSelectionManager m_LayerSelection;

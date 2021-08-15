@@ -234,7 +234,7 @@ public:
 
 public:
   mutable ezEvent<const ezGameObjectEvent&> m_GameObjectEvents;
-  mutable ezObjectMetaData<ezUuid, ezGameObjectMetaData> m_GameObjectMetaData;
+  mutable ezUniquePtr<ezObjectMetaData<ezUuid, ezGameObjectMetaData>> m_GameObjectMetaData;
 
   static ezEvent<const ezGameObjectDocumentEvent&> s_GameObjectDocumentEvents;
 

@@ -97,6 +97,7 @@ ezScene2Document::~ezScene2Document()
   m_SelectionManager = std::move(m_sceneSelectionManager);
   m_ObjectAccessor = std::move(m_pSceneObjectAccessor);
   m_DocumentObjectMetaData = std::move(m_SceneDocumentObjectMetaData);
+  m_GameObjectMetaData = std::move(m_SceneGameObjectMetaData);
 
   // See comment above for UnsubscribeGameObjectEventHandlers.
   SubscribeGameObjectEventHandlers();
@@ -156,6 +157,7 @@ void ezScene2Document::InitializeAfterLoadingAndSaving()
   m_sceneSelectionManager = std::move(m_SelectionManager);
   m_pSceneObjectAccessor = std::move(m_ObjectAccessor);
   m_SceneDocumentObjectMetaData = std::move(m_DocumentObjectMetaData);
+  m_SceneGameObjectMetaData = std::move(m_GameObjectMetaData);
 
   // Replace real scene elements with copies.
   m_pObjectManager = EZ_DEFAULT_NEW(ezSceneObjectManager);
@@ -170,7 +172,9 @@ void ezScene2Document::InitializeAfterLoadingAndSaving()
   using ObjectMetaData = ezObjectMetaData<ezUuid, ezDocumentObjectMetaData>;
   m_DocumentObjectMetaData = EZ_DEFAULT_NEW(ObjectMetaData);
   m_DocumentObjectMetaData->SwapStorage(m_SceneDocumentObjectMetaData->GetStorage());
-
+  using GameObjectMetaData = ezObjectMetaData<ezUuid, ezGameObjectMetaData>;
+  m_GameObjectMetaData = EZ_DEFAULT_NEW(GameObjectMetaData);
+  m_GameObjectMetaData->SwapStorage(m_SceneGameObjectMetaData->GetStorage());
 
   // See comment above for UnsubscribeGameObjectEventHandlers.
   SubscribeGameObjectEventHandlers();
@@ -545,6 +549,7 @@ ezStatus ezScene2Document::SetActiveLayer(const ezUuid& layerGuid)
     m_CommandHistory->SwapStorage(m_pSceneCommandHistory->GetStorage());
     m_SelectionManager->SwapStorage(m_sceneSelectionManager->GetStorage());
     m_DocumentObjectMetaData->SwapStorage(m_SceneDocumentObjectMetaData->GetStorage());
+    m_GameObjectMetaData->SwapStorage(m_SceneGameObjectMetaData->GetStorage());
     // m_pSceneObjectAccessor does not need to be modified
 
     e.m_EventType = ezDocumentObjectStructureEvent::Type::AfterReset;

@@ -802,7 +802,7 @@ bool ezSceneDocument::Paste(const ezArrayPtr<PasteInfo>& info, const ezAbstractO
   }
 
   m_DocumentObjectMetaData->RestoreMetaDataFromAbstractGraph(objectGraph);
-  m_GameObjectMetaData.RestoreMetaDataFromAbstractGraph(objectGraph);
+  m_GameObjectMetaData->RestoreMetaDataFromAbstractGraph(objectGraph);
 
   // set the pasted objects as the new selection
   {
@@ -827,7 +827,7 @@ bool ezSceneDocument::DuplicateSelectedObjects(const ezArrayPtr<PasteInfo>& info
     return false;
 
   m_DocumentObjectMetaData->RestoreMetaDataFromAbstractGraph(objectGraph);
-  m_GameObjectMetaData.RestoreMetaDataFromAbstractGraph(objectGraph);
+  m_GameObjectMetaData->RestoreMetaDataFromAbstractGraph(objectGraph);
 
   // set the pasted objects as the new selection
   if (bSetSelected)

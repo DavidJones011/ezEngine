@@ -33,6 +33,9 @@ ezGameObjectDocument::ezGameObjectDocument(
   const char* szDocumentPath, ezDocumentObjectManager* pObjectManager, ezAssetDocEngineConnection engineConnectionType)
   : ezAssetDocument(szDocumentPath, pObjectManager, engineConnectionType)
 {
+  using Meta = ezObjectMetaData<ezUuid, ezGameObjectMetaData>;
+  m_GameObjectMetaData = EZ_DEFAULT_NEW(Meta);
+
   EZ_ASSERT_DEV(engineConnectionType == ezAssetDocEngineConnection::FullObjectMirroring,
     "ezGameObjectDocument only supports full mirroring engine connection types. The parameter only exists for interface compatibility.");
 
@@ -304,7 +307,7 @@ void ezGameObjectDocument::DetermineNodeName(
 void ezGameObjectDocument::QueryCachedNodeName(
   const ezDocumentObject* pObject, ezStringBuilder& out_Result, ezUuid* out_pPrefabGuid, QIcon* out_pIcon /*= nullptr*/) const
 {
-  auto pMetaScene = m_GameObjectMetaData.BeginReadMetaData(pObject->GetGuid());
+  auto pMetaScene = m_GameObjectMetaData->BeginReadMetaData(pObject->GetGuid());
   auto pMetaDoc = m_DocumentObjectMetaData->BeginReadMetaData(pObject->GetGuid());
   const ezUuid prefabGuid = pMetaDoc->m_CreateFromPrefab;
 
@@ -312,8 +315,9 @@ void ezGameObjectDocument::QueryCachedNodeName(
     *out_pPrefabGuid = prefabGuid;
 
   out_Result = pMetaScene->m_CachedNodeName;
-
-  m_GameObjectMetaData.EndReadMetaData();
+  if (out_pIcon)
+    *out_pIcon = pMetaScene->m_Icon;
+  m_GameObjectMetaData->EndReadMetaData();
   m_DocumentObjectMetaData->EndReadMetaData();
 
   if (out_Result.IsEmpty())
@@ -329,10 +333,10 @@ void ezGameObjectDocument::QueryCachedNodeName(
     {
       out_Result = sNodeName;
     }
-    auto pMetaWrite = m_GameObjectMetaData.BeginModifyMetaData(pObject->GetGuid());
+    auto pMetaWrite = m_GameObjectMetaData->BeginModifyMetaData(pObject->GetGuid());
     pMetaWrite->m_CachedNodeName = out_Result;
     pMetaWrite->m_Icon = icon;
-    m_GameObjectMetaData.EndModifyMetaData(0); // no need to broadcast this change
+    m_GameObjectMetaData->EndModifyMetaData(0); // no need to broadcast this change
 
     if (out_pIcon != nullptr)
       *out_pIcon = icon;
@@ -526,14 +530,14 @@ void ezGameObjectDocument::AttachMetaDataBeforeSaving(ezAbstractObjectGraph& gra
 {
   ezAssetDocument::AttachMetaDataBeforeSaving(graph);
 
-  m_GameObjectMetaData.AttachMetaDataToAbstractGraph(graph);
+  m_GameObjectMetaData->AttachMetaDataToAbstractGraph(graph);
 }
 
 void ezGameObjectDocument::RestoreMetaDataAfterLoading(const ezAbstractObjectGraph& graph, bool bUndoable)
 {
   ezAssetDocument::RestoreMetaDataAfterLoading(graph, bUndoable);
 
-  m_GameObjectMetaData.RestoreMetaDataFromAbstractGraph(graph);
+  m_GameObjectMetaData->RestoreMetaDataFromAbstractGraph(graph);
 }
 
 void ezGameObjectDocument::TriggerShowSelectionInScenegraph() const
@@ -812,9 +816,9 @@ void ezGameObjectDocument::ObjectPropertyEventHandler(const ezDocumentObjectProp
 
   if (e.m_sProperty == "Name")
   {
-    auto pMetaWrite = m_GameObjectMetaData.BeginModifyMetaData(e.m_pObject->GetGuid());
+    auto pMetaWrite = m_GameObjectMetaData->BeginModifyMetaData(e.m_pObject->GetGuid());
     pMetaWrite->m_CachedNodeName.Clear();
-    m_GameObjectMetaData.EndModifyMetaData(ezGameObjectMetaData::CachedName);
+    m_GameObjectMetaData->EndModifyMetaData(ezGameObjectMetaData::CachedName);
   }
 }
 
@@ -855,16 +859,16 @@ void ezGameObjectDocument::ObjectStructureEventHandler(const ezDocumentObjectStr
         {
           if (e.m_pPreviousParent != nullptr)
           {
-            auto pMeta = m_GameObjectMetaData.BeginModifyMetaData(e.m_pPreviousParent->GetGuid());
+            auto pMeta = m_GameObjectMetaData->BeginModifyMetaData(e.m_pPreviousParent->GetGuid());
             pMeta->m_CachedNodeName.Clear();
-            m_GameObjectMetaData.EndModifyMetaData(ezGameObjectMetaData::CachedName);
+            m_GameObjectMetaData->EndModifyMetaData(ezGameObjectMetaData::CachedName);
           }
 
           if (e.m_pNewParent != nullptr)
           {
-            auto pMeta = m_GameObjectMetaData.BeginModifyMetaData(e.m_pNewParent->GetGuid());
+            auto pMeta = m_GameObjectMetaData->BeginModifyMetaData(e.m_pNewParent->GetGuid());
             pMeta->m_CachedNodeName.Clear();
-            m_GameObjectMetaData.EndModifyMetaData(ezGameObjectMetaData::CachedName);
+            m_GameObjectMetaData->EndModifyMetaData(ezGameObjectMetaData::CachedName);
           }
         }
         break;
@@ -894,7 +898,7 @@ void ezGameObjectDocument::ObjectEventHandler(const ezDocumentObjectEvent& e)
         // don't change the object that is being destroyed is typically referenced by a command that was in the redo-queue that got purged
 
         m_DocumentObjectMetaData->ClearMetaData(e.m_pObject->GetGuid());
-        m_GameObjectMetaData.ClearMetaData(e.m_pObject->GetGuid());
+        m_GameObjectMetaData->ClearMetaData(e.m_pObject->GetGuid());
       }
     }
     break;
