@@ -40,7 +40,7 @@ public:
   ezSelectionManager();
 
   // Should be called after construction. Can only be called once.
-  void SetOwner(const ezDocumentObjectManager* pDocument);
+  void SetOwner(const ezDocumentObjectManager* pObjectManager);
 
   void SetSelection(const ezDocumentObject* pSingleObject)
   {

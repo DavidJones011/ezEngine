@@ -47,7 +47,7 @@ public:
 
 private:
   void LayerEventHandler(const ezScene2LayerEvent& e);
-	void UpdateEnableState();
+  void UpdateEnableState();
   ezUuid GetCurrentSelectedLayer() const;
 
 private:

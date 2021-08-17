@@ -14,7 +14,7 @@ class EZ_EDITORFRAMEWORK_DLL ezQtGameObjectWidget : public QWidget
 
 public:
   ezQtGameObjectWidget(
-    QWidget* pParent, ezGameObjectDocument* pDocument, const char* szContextMenuMapping, std::unique_ptr<ezQtDocumentTreeModel> pCustomModel);
+    QWidget* pParent, ezGameObjectDocument* pDocument, const char* szContextMenuMapping, std::unique_ptr<ezQtDocumentTreeModel> pCustomModel, ezSelectionManager* pSelection = nullptr);
   ~ezQtGameObjectWidget();
 
 private Q_SLOTS:

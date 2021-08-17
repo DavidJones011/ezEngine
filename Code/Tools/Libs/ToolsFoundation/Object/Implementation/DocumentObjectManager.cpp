@@ -85,7 +85,8 @@ ezDocumentObject* ezDocumentObjectManager::CreateObject(const ezRTTI* pRtti, ezU
   EZ_ASSERT_DEV(pRtti != nullptr, "Unknown RTTI type");
 
   ezDocumentObject* pObject = InternalCreateObject(pRtti);
-  pObject->m_pDocumentObjectManager = this;
+  // In case the storage is swapped, objects should still be created in their original document manager.
+  pObject->m_pDocumentObjectManager = m_pObjectStorage->m_RootObject.GetDocumentObjectManager();
 
   if (guid.IsValid())
     pObject->m_Guid = guid;

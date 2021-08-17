@@ -75,6 +75,10 @@ public:
   ezSelectionManager* GetSceneSelectionManager() const { return m_sceneSelectionManager.Borrow(); }
   ezCommandHistory* GetSceneCommandHistory() const { return m_pSceneCommandHistory.Borrow(); }
   ezObjectAccessorBase* GetSceneObjectAccessor() const { return m_pSceneObjectAccessor.Borrow(); }
+  const ezObjectMetaData<ezUuid, ezDocumentObjectMetaData>* GetSceneDocumentObjectMetaData() const { return m_SceneDocumentObjectMetaData.Borrow(); }
+  ezObjectMetaData<ezUuid, ezDocumentObjectMetaData>* GetSceneDocumentObjectMetaData() { return m_SceneDocumentObjectMetaData.Borrow(); }
+  const ezObjectMetaData<ezUuid, ezGameObjectMetaData>* GetSceneGameObjectMetaData() const { return m_SceneGameObjectMetaData.Borrow(); }
+  ezObjectMetaData<ezUuid, ezGameObjectMetaData>* GetSceneGameObjectMetaData() { return m_SceneGameObjectMetaData.Borrow(); }
 
   ezSelectionManager* GetLayerSelectionManager() const { return &m_LayerSelection; }
 

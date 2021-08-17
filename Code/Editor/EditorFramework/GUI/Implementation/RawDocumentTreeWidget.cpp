@@ -115,6 +115,7 @@ void ezQtDocumentTreeView::EnsureLastSelectedItemVisible()
     return;
 
   const ezDocumentObject* pObject = m_pSelectionManager->GetSelection().PeekBack();
+  EZ_ASSERT_DEBUG(m_pModel->GetDocumentTree()->GetDocument() == pObject->GetDocumentObjectManager()->GetDocument(), "Selection is from a different document.");
 
   auto index = m_pModel->ComputeModelIndex(pObject);
   index = m_pFilterModel->mapFromSource(index);

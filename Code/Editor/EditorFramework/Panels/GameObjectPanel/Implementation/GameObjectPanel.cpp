@@ -7,7 +7,7 @@
 #include <GuiFoundation/Widgets/SearchWidget.moc.h>
 
 
-ezQtGameObjectWidget::ezQtGameObjectWidget(QWidget* pParent, ezGameObjectDocument* pDocument, const char* szContextMenuMapping, std::unique_ptr<ezQtDocumentTreeModel> pCustomModel)
+ezQtGameObjectWidget::ezQtGameObjectWidget(QWidget* pParent, ezGameObjectDocument* pDocument, const char* szContextMenuMapping, std::unique_ptr<ezQtDocumentTreeModel> pCustomModel, ezSelectionManager* pSelection)
 {
   m_pDocument = pDocument;
   m_sContextMenuMapping = szContextMenuMapping;
@@ -21,7 +21,7 @@ ezQtGameObjectWidget::ezQtGameObjectWidget(QWidget* pParent, ezGameObjectDocumen
 
   layout()->addWidget(m_pFilterWidget);
 
-  m_pTreeWidget = new ezQtDocumentTreeView(this, pDocument, std::move(pCustomModel));
+  m_pTreeWidget = new ezQtDocumentTreeView(this, pDocument, std::move(pCustomModel), pSelection);
   m_pTreeWidget->SetAllowDragDrop(true);
   m_pTreeWidget->SetAllowDeleteObjects(true);
   layout()->addWidget(m_pTreeWidget);

@@ -12,10 +12,7 @@ class ezQtScenegraphModel : public ezQtGameObjectModel
   Q_OBJECT
 
 public:
-  ezQtScenegraphModel(ezSceneDocument* pDocument, const ezUuid& root = ezUuid());
+  ezQtScenegraphModel(const ezDocumentObjectManager* pObjectManager, const ezUuid& root = ezUuid());
   ~ezQtScenegraphModel();
-
-private:
-  ezSceneDocument* m_pSceneDocument;
 };
 
