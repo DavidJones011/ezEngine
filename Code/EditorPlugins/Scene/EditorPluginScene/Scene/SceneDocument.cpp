@@ -262,6 +262,12 @@ void ezSceneDocument::AttachToObject()
   if (ctxt.m_pLastHoveredViewWidget == nullptr || ctxt.m_pLastPickingResult == nullptr || !ctxt.m_pLastPickingResult->m_PickedObject.IsValid())
     return;
 
+  if (GetObjectManager()->GetObject(ctxt.m_pLastPickingResult->m_PickedObject) == nullptr)
+  {
+    ezQtUiServices::GetSingleton()->MessageBoxStatus(ezStatus(EZ_FAILURE), "Target object belongs to a different document.");
+    return;
+  }
+
   ezMoveObjectCommand cmd;
   cmd.m_sParentProperty = "Children";
   cmd.m_NewParent = ctxt.m_pLastPickingResult->m_PickedObject;

@@ -1,4 +1,4 @@
-#include <EditorPluginScenePCH.h>
+#include <EnginePluginScene/EnginePluginScenePCH.h>
 
 #include <EditorPluginScene/Objects/SceneObjectManager.h>
 #include <EditorPluginScene/Panels/LayerPanel/LayerPanel.moc.h>

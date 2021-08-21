@@ -72,6 +72,9 @@ public:
 
   ezWorld* GetWorld() const { return m_pWorld; }
 
+  /// \brief Tries to resolve a 'reference' (given in pData) to an ezGameObject.
+  virtual ezGameObjectHandle ResolveStringToGameObjectHandle(const void* pString, ezComponentHandle hThis, const char* szProperty) const;
+
 protected:
   virtual void OnInitialize();
   virtual void OnDeinitialize();
@@ -133,9 +136,6 @@ protected:
   {
     return uiView >= m_ViewContexts.GetCount() ? nullptr : m_ViewContexts[uiView];
   }
-
-  /// \brief Tries to resolve a 'reference' (given in pData) to an ezGameObject.
-  ezGameObjectHandle ResolveStringToGameObjectHandle(const void* pString, ezComponentHandle hThis, const char* szProperty) const;
 
 private:
   friend class ezEditorEngineSyncObject;

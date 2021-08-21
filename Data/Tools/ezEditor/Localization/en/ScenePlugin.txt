@@ -96,6 +96,7 @@ Scene.Simulation.Speed.10;1000%
 Layer.CreateLayer;Create Layer...
 Layer.DeleteLayer;Delete Layer
 Layer.SaveLayer;Save Layer
+Layer.SaveActiveLayer;Save Active Layer
 Layer.LayerLoaded;Layer Loaded
 Layer.LayerVisible;Layer Visible
 General;General

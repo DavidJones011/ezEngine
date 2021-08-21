@@ -506,6 +506,7 @@ ezStatus ezDocumentObjectManager::CanSelect(const ezDocumentObject* pObject) con
 
 bool ezDocumentObjectManager::IsUnderRootProperty(const char* szRootProperty, const ezDocumentObject* pObject) const
 {
+  EZ_ASSERT_DEBUG(m_pObjectStorage->m_RootObject.GetDocumentObjectManager() == pObject->GetDocumentObjectManager(), "Passed in object does not belong to this object manager.");
   while (pObject->GetParent() != GetRootObject())
   {
     pObject = pObject->GetParent();
@@ -516,6 +517,7 @@ bool ezDocumentObjectManager::IsUnderRootProperty(const char* szRootProperty, co
 
 bool ezDocumentObjectManager::IsUnderRootProperty(const char* szRootProperty, const ezDocumentObject* pParent, const char* szParentProperty) const
 {
+  EZ_ASSERT_DEBUG(pParent == nullptr || m_pObjectStorage->m_RootObject.GetDocumentObjectManager() == pParent->GetDocumentObjectManager(), "Passed in object does not belong to this object manager.");
   if (pParent == nullptr || pParent == GetRootObject())
   {
     return ezStringUtils::IsEqual(szParentProperty, szRootProperty);

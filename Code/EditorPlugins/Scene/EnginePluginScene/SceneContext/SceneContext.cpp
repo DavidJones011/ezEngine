@@ -344,9 +344,9 @@ void ezSceneContext::HandleTagMsgToEngineMsg(const ezObjectTagMsgToEngine* pMsg)
     else
     {
       if (pMsg->m_bSetTag)
-        pObject->GetTags().Set(tag);
+        pObject->SetTag(tag);
       else
-        pObject->GetTags().Remove(tag);
+        pObject->RemoveTag(tag);
     }
   }
 }
@@ -955,6 +955,26 @@ void ezSceneContext::UpdateDocumentContext()
   }
 }
 
+ezGameObjectHandle ezSceneContext::ResolveStringToGameObjectHandle(const void* pString, ezComponentHandle hThis, const char* szProperty) const
+{
+  if (m_Context.m_ComponentMap.GetGuid(hThis).IsValid())
+  {
+    return SUPER::ResolveStringToGameObjectHandle(pString, hThis, szProperty);
+  }
+  for (const ezLayerContext* pLayer : m_Layers)
+  {
+    if (pLayer)
+    {
+      if (pLayer->m_Context.m_ComponentMap.GetGuid(hThis).IsValid())
+      {
+        return pLayer->ResolveStringToGameObjectHandle(pString, hThis, szProperty);
+      }
+    }
+  }
+  ezLog::Error("Game object reference could not be resolved. Component source was not found.");
+  return ezGameObjectHandle();
+}
+
 bool ezSceneContext::UpdateThumbnailViewContext(ezEngineProcessViewContext* pThumbnailViewContext)
 {
   const ezBoundingBoxSphere bounds = GetWorldBounds(m_pWorld);
@@ -1024,23 +1044,38 @@ void ezSceneContext::RemoveAmbientLight()
   }
 }
 
-ezWorldRttiConverterContext& ezSceneContext::GetActiveContext()
+const ezEngineProcessDocumentContext* ezSceneContext::GetActiveDocumentContext() const
 {
   if (m_ActiveLayer == GetDocumentGuid())
   {
-    return m_Context;
+    return this;
   }
 
-  for (ezLayerContext* pLayer : m_Layers)
+  for (const ezLayerContext* pLayer : m_Layers)
   {
     if (pLayer && m_ActiveLayer == pLayer->GetDocumentGuid())
     {
-      return pLayer->m_Context;
+      return pLayer;
     }
   }
 
   EZ_REPORT_FAILURE("Active layer does not exist.");
-  return m_Context;
+  return this;
+}
+
+ezEngineProcessDocumentContext* ezSceneContext::GetActiveDocumentContext()
+{
+  return const_cast<ezEngineProcessDocumentContext*>(const_cast<const ezSceneContext*>(this)->GetActiveDocumentContext());
+}
+
+const ezWorldRttiConverterContext& ezSceneContext::GetActiveContext() const
+{
+  return GetActiveDocumentContext()->m_Context;
+}
+
+ezWorldRttiConverterContext& ezSceneContext::GetActiveContext()
+{
+  return const_cast<ezWorldRttiConverterContext&>(const_cast<const ezSceneContext*>(this)->GetActiveContext());
 }
 
 ezWorldRttiConverterContext* ezSceneContext::GetContextForLayer(const ezUuid& layerGuid)

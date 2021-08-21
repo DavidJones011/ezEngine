@@ -32,7 +32,7 @@ public:
   public:
     ezDeque<const ezDocumentObject*> m_SelectionList;
     ezSet<ezUuid> m_SelectionSet;
-
+    const ezDocumentObjectManager* m_pObjectManager = nullptr;
     ezCopyOnBroadcastEvent<const ezSelectionManagerEvent&> m_Events;
   };
 
@@ -87,5 +87,4 @@ private:
   ezSharedPtr<ezSelectionManager::Storage> m_pSelectionStorage;
 
   ezCopyOnBroadcastEvent<const ezSelectionManagerEvent&>::Unsubscriber m_EventsUnsubscriber;
-  const ezDocumentObjectManager* m_pObjectManager = nullptr;
 };

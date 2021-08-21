@@ -50,7 +50,10 @@ public:
   void AddLayerIndexTag(const ezEntityMsgToEngine& msg, ezWorldRttiConverterContext& context, const ezTag& layerTag);
   const ezArrayPtr<const ezTag> GetInvisibleLayerTags() const;
 
+  ezEngineProcessDocumentContext* GetActiveDocumentContext();
+  const ezEngineProcessDocumentContext* GetActiveDocumentContext() const;
   ezWorldRttiConverterContext& GetActiveContext();
+  const ezWorldRttiConverterContext& GetActiveContext() const;
   ezWorldRttiConverterContext* GetContextForLayer(const ezUuid& layerGuid);
   ezArrayPtr<ezWorldRttiConverterContext*> GetAllContexts();
 
@@ -67,6 +70,7 @@ protected:
   virtual void OnThumbnailViewContextCreated() override;
   virtual void OnDestroyThumbnailViewContext() override;
   virtual void UpdateDocumentContext() override;
+  virtual ezGameObjectHandle ResolveStringToGameObjectHandle(const void* pString, ezComponentHandle hThis, const char* szProperty) const override;
 
 private:
   struct TagGameObject

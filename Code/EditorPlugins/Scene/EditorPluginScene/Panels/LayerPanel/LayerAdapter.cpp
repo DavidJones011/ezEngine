@@ -1,10 +1,11 @@
-#include <EditorPluginScenePCH.h>
+#include <EnginePluginScene/EnginePluginScenePCH.h>
 
 #include <EditorFramework/Assets/AssetCurator.h>
 #include <EditorPluginScene/Actions/LayerActions.h>
 #include <EditorPluginScene/Panels/LayerPanel/LayerAdapter.moc.h>
 #include <EditorPluginScene/Scene/Scene2Document.h>
 #include <GuiFoundation/UIServices/UIServices.moc.h>
+#include <QToolTip>
 
 ezQtLayerAdapter::ezQtLayerAdapter(ezScene2Document* pDocument)
   : ezQtDocumentTreeModelAdapter(pDocument->GetSceneObjectManager(), ezGetStaticRTTI<ezSceneLayer>(), nullptr)
@@ -34,6 +35,7 @@ QVariant ezQtLayerAdapter::data(const ezDocumentObject* pObject, int row, int co
     }
     break;
     case Qt::DisplayRole:
+    case Qt::ToolTipRole:
     {
       ezObjectAccessorBase* pAccessor = m_pSceneDocument->GetSceneObjectAccessor();
       ezUuid layerGuid = pAccessor->Get<ezUuid>(pObject, "Layer");
@@ -41,6 +43,10 @@ QVariant ezQtLayerAdapter::data(const ezDocumentObject* pObject, int row, int co
       const ezAssetCurator::ezLockedSubAsset subAsset = ezAssetCurator::GetSingleton()->GetSubAsset(layerGuid);
       if (subAsset.isValid())
       {
+        if (role == Qt::ToolTipRole)
+        {
+          return subAsset->m_pAssetInfo->m_sAbsolutePath.GetData();
+        }
         ezStringBuilder sName = subAsset->GetName();
         QString sQtName = QString::fromUtf8(sName.GetData());
         if (ezSceneDocument* pLayer = m_pSceneDocument->GetLayerDocument(layerGuid))
@@ -64,12 +70,6 @@ QVariant ezQtLayerAdapter::data(const ezDocumentObject* pObject, int row, int co
       return ezQtUiServices::GetCachedIconResource(":/EditorPluginScene/Icons/Layer16.png");
     }
     break;
-
-    case Qt::ToolTipRole:
-    {
-      return QStringLiteral("A layer tooltip");
-    }
-    break;
     case Qt::ForegroundRole:
     {
       ezObjectAccessorBase* pAccessor = m_pSceneDocument->GetSceneObjectAccessor();
@@ -78,6 +78,16 @@ QVariant ezQtLayerAdapter::data(const ezDocumentObject* pObject, int row, int co
       {
         return QColor(128, 128, 128);
       }
+    }
+    break;
+    case Qt::FontRole:
+    {
+      QFont font;
+      ezObjectAccessorBase* pAccessor = m_pSceneDocument->GetSceneObjectAccessor();
+      ezUuid layerGuid = pAccessor->Get<ezUuid>(pObject, "Layer");
+      if (m_pSceneDocument->GetActiveLayer() == layerGuid)
+        font.setBold(true);
+      return font;
     }
     break;
   }
@@ -103,6 +113,17 @@ void ezQtLayerAdapter::LayerEventHandler(const ezScene2LayerEvent& e)
       Q_EMIT dataChanged(m_pSceneDocument->GetLayerObject(e.m_layerGuid), v);
     }
     break;
+    case ezScene2LayerEvent::Type::ActiveLayerChanged:
+    {
+      QVector<int> v;
+      v.push_back(Qt::FontRole);
+      if (auto pObject = m_pSceneDocument->GetLayerObject(m_CurrentActiveLayer))
+      {
+        Q_EMIT dataChanged(pObject, v);
+      }
+      Q_EMIT dataChanged(m_pSceneDocument->GetLayerObject(e.m_layerGuid), v);
+      m_CurrentActiveLayer = e.m_layerGuid;
+    }
     default:
       break;
   }
@@ -135,7 +156,7 @@ bool ezQtLayerDelegate::mousePressEvent(QMouseEvent* event, const QStyleOptionVi
 {
   const QRect visibleRect = GetVisibleIconRect(option);
   const QRect loadedRect = GetLoadedIconRect(option);
-  if (visibleRect.contains(event->localPos().toPoint()) || loadedRect.contains(event->localPos().toPoint()))
+  if (event->button() == Qt::MouseButton::LeftButton && (visibleRect.contains(event->localPos().toPoint()) || loadedRect.contains(event->localPos().toPoint())))
   {
     m_bPressed = true;
     event->accept();
@@ -209,6 +230,29 @@ void ezQtLayerDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
 QSize ezQtLayerDelegate::sizeHint(const QStyleOptionViewItem& opt, const QModelIndex& index) const
 {
   return ezQtItemDelegate::sizeHint(opt, index);
+}
+
+bool ezQtLayerDelegate::helpEvent(QHelpEvent* event, QAbstractItemView* view, const QStyleOptionViewItem& option, const QModelIndex& index)
+{
+  const ezUuid layerGuid = index.data(ezQtLayerAdapter::UserRoles::LayerGuid).value<ezUuid>();
+  if (layerGuid.IsValid())
+  {
+    const QRect visibleRect = GetVisibleIconRect(option);
+    const QRect loadedRect = GetLoadedIconRect(option);
+    if (visibleRect.contains(event->pos()))
+    {
+      const bool bVisible = m_pDocument->IsLayerVisible(layerGuid);
+      QToolTip::showText(event->globalPos(), bVisible ? "Hide Layer" : "Show Layer", view);
+      return true;
+    }
+    else if (loadedRect.contains(event->pos()))
+    {
+      const bool bLoaded = m_pDocument->IsLayerLoaded(layerGuid);
+      QToolTip::showText(event->globalPos(), bLoaded ? "Unload Layer" : "Load Layer", view);
+      return true;
+    }
+  }
+  return ezQtItemDelegate::helpEvent(event, view, option, index);
 }
 
 QRect ezQtLayerDelegate::GetVisibleIconRect(const QStyleOptionViewItem& opt)

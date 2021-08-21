@@ -1,6 +1,7 @@
-#include <EditorPluginScenePCH.h>
+#include <EnginePluginScene/EnginePluginScenePCH.h>
 
 #include <EditorPluginScene/InputContexts/SceneSelectionContext.h>
+#include <EditorPluginScene/Scene/LayerDocument.h>
 #include <EditorFramework/DocumentWindow/EngineViewWidget.moc.h>
 #include <EditorFramework/DocumentWindow/EngineDocumentWindow.moc.h>
 #include <EditorPluginScene/Scene/Scene2Document.h>
@@ -17,14 +18,22 @@ void ezSceneSelectionContext::OpenDocumentForPickedObject(const ezObjectPickingR
 
 void ezSceneSelectionContext::SelectPickedObject(const ezObjectPickingResult& res, bool bToggle, bool bDirect) const
 {
-  if (res.m_PickedObject.IsValid())
+  // If bToggle (ctrl-key) is held, we don't want to switch layers.
+  // Same if we have a custom pick override set which usually means that the selection is hijacked to make an object modification on the current layer.
+  if (res.m_PickedObject.IsValid() && !bToggle)
   {
-    ezUuid layerGuid = FindLayerByObject(res.m_PickedObject);
+    const ezDocumentObject* pObject = nullptr;
+    ezUuid layerGuid = FindLayerByObject(res.m_PickedObject, pObject);
     if (layerGuid.IsValid())
     {
       ezScene2Document* pSceneDocument = ezDynamicCast<ezScene2Document*>(GetOwnerWindow()->GetDocument());
       if (pSceneDocument->IsLayerLoaded(layerGuid))
       {
+        if (m_PickObjectOverride.IsValid())
+        {
+          m_PickObjectOverride(pObject);
+          return;
+        }
         pSceneDocument->SetActiveLayer(layerGuid);
       }
     }
@@ -32,7 +41,7 @@ void ezSceneSelectionContext::SelectPickedObject(const ezObjectPickingResult& re
   ezSelectionContext::SelectPickedObject(res, bToggle, bDirect);
 }
 
-ezUuid ezSceneSelectionContext::FindLayerByObject(ezUuid objectGuid) const
+ezUuid ezSceneSelectionContext::FindLayerByObject(ezUuid objectGuid, const ezDocumentObject*& out_pObject) const
 {
   ezHybridArray<ezSceneDocument*, 8> loadedLayers;
   const ezScene2Document* pSceneDocument = ezDynamicCast<const ezScene2Document*>(GetOwnerWindow()->GetDocument());
@@ -41,15 +50,16 @@ ezUuid ezSceneSelectionContext::FindLayerByObject(ezUuid objectGuid) const
   {
     if (pLayer == pSceneDocument)
     {
-      if (pSceneDocument->GetSceneObjectManager()->GetObject(objectGuid))
+      if (out_pObject = pSceneDocument->GetSceneObjectManager()->GetObject(objectGuid))
       {
         return pLayer->GetGuid();
       }
     }
-    else if (pLayer->GetObjectManager()->GetObject(objectGuid) != nullptr)
+    else if (out_pObject = pLayer->GetObjectManager()->GetObject(objectGuid))
     {
       return pLayer->GetGuid();
     }
   }
+  out_pObject = nullptr;
   return ezUuid();
 }

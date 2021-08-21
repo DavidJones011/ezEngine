@@ -1,4 +1,4 @@
-#include <EditorPluginScenePCH.h>
+#include <EnginePluginScene/EnginePluginScenePCH.h>
 
 #include <EditorFramework/DocumentWindow/QuadViewWidget.moc.h>
 #include <EditorFramework/Gizmos/SnapProvider.h>
@@ -34,7 +34,7 @@ ezQtScene2DocumentWindow::ezQtScene2DocumentWindow(ezScene2Document* pDocument)
     // Menu Bar
     ezQtMenuBarActionMapView* pMenuBar = static_cast<ezQtMenuBarActionMapView*>(menuBar());
     ezActionContext context;
-    context.m_sMapping = "EditorPluginScene_DocumentMenuBar";
+    context.m_sMapping = "EditorPluginScene_Scene2MenuBar";
     context.m_pDocument = pDocument;
     context.m_pWindow = this;
     pMenuBar->SetActionContext(context);
@@ -44,7 +44,7 @@ ezQtScene2DocumentWindow::ezQtScene2DocumentWindow(ezScene2Document* pDocument)
     // Tool Bar
     ezQtToolBarActionMapView* pToolBar = new ezQtToolBarActionMapView("Toolbar", this);
     ezActionContext context;
-    context.m_sMapping = "EditorPluginScene_DocumentToolBar";
+    context.m_sMapping = "EditorPluginScene_Scene2ToolBar";
     context.m_pDocument = pDocument;
     context.m_pWindow = this;
     pToolBar->SetActionContext(context);

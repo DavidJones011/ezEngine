@@ -171,9 +171,9 @@ void ezSceneActions::UnregisterActions()
   }
 }
 
-void ezSceneActions::MapMenuActions()
+void ezSceneActions::MapMenuActions(const char* szMapping)
 {
-  ezActionMap* pMap = ezActionMapManager::GetActionMap("EditorPluginScene_DocumentMenuBar");
+  ezActionMap* pMap = ezActionMapManager::GetActionMap(szMapping);
   EZ_ASSERT_DEV(pMap != nullptr, "Mapping the actions failed!");
 
   {
@@ -205,9 +205,9 @@ void ezSceneActions::MapMenuActions()
   }
 }
 
-void ezSceneActions::MapToolbarActions()
+void ezSceneActions::MapToolbarActions(const char* szMapping)
 {
-  ezActionMap* pMap = ezActionMapManager::GetActionMap("EditorPluginScene_DocumentToolBar");
+  ezActionMap* pMap = ezActionMapManager::GetActionMap(szMapping);
   EZ_ASSERT_DEV(pMap != nullptr, "Mapping the actions failed!");
 
   {

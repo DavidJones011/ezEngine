@@ -12,17 +12,16 @@ ezSelectionManager::ezSelectionManager()
 
 void ezSelectionManager::SetOwner(const ezDocumentObjectManager* pObjectManager)
 {
-  EZ_ASSERT_DEV((m_pObjectManager == nullptr) != (pObjectManager == nullptr), "SetOwner can only be called once.");
+  EZ_ASSERT_DEV((m_pSelectionStorage->m_pObjectManager == nullptr) != (pObjectManager == nullptr), "SetOwner can only be called once.");
   if (pObjectManager)
   {
     pObjectManager->m_StructureEvents.AddEventHandler(ezMakeDelegate(&ezSelectionManager::TreeEventHandler, this));
   }
   else
   {
-    m_pObjectManager->m_StructureEvents.RemoveEventHandler(ezMakeDelegate(&ezSelectionManager::TreeEventHandler, this));
+    m_pSelectionStorage->m_pObjectManager->m_StructureEvents.RemoveEventHandler(ezMakeDelegate(&ezSelectionManager::TreeEventHandler, this));
   }
-
-  m_pObjectManager = pObjectManager;
+  m_pSelectionStorage->m_pObjectManager = pObjectManager;
 }
 
 void ezSelectionManager::TreeEventHandler(const ezDocumentObjectStructureEvent& e)
@@ -79,7 +78,8 @@ void ezSelectionManager::AddObject(const ezDocumentObject* pObject)
   if (IsSelected(pObject))
     return;
 
-  ezStatus res = m_pObjectManager->CanSelect(pObject);
+  EZ_ASSERT_DEV(pObject->GetDocumentObjectManager() == m_pSelectionStorage->m_pObjectManager, "Passed in object does not belong to same object manager.");
+  ezStatus res = m_pSelectionStorage->m_pObjectManager->CanSelect(pObject);
   if (res.m_Result.Failed())
   {
     ezLog::Error("{0}", res.m_sMessage);
@@ -151,7 +151,8 @@ void ezSelectionManager::SetSelection(const ezDeque<const ezDocumentObject*>& Se
   {
     if (Selection[i] != nullptr)
     {
-      ezStatus res = m_pObjectManager->CanSelect(Selection[i]);
+      EZ_ASSERT_DEV(Selection[i]->GetDocumentObjectManager() == m_pSelectionStorage->m_pObjectManager, "Passed in object does not belong to same object manager.");
+      ezStatus res = m_pSelectionStorage->m_pObjectManager->CanSelect(Selection[i]);
       if (res.m_Result.Failed())
       {
         ezLog::Error("{0}", res.m_sMessage);
@@ -163,12 +164,14 @@ void ezSelectionManager::SetSelection(const ezDeque<const ezDocumentObject*>& Se
     }
   }
 
-  ezSelectionManagerEvent e;
-  e.m_pDocument = GetDocument();
-  e.m_pObject = nullptr;
-  e.m_Type = ezSelectionManagerEvent::Type::SelectionSet;
-
-  m_pSelectionStorage->m_Events.Broadcast(e);
+  {
+    // Sync selection model.
+    ezSelectionManagerEvent e;
+    e.m_pDocument = GetDocument();
+    e.m_pObject = nullptr;
+    e.m_Type = ezSelectionManagerEvent::Type::SelectionSet;
+    m_pSelectionStorage->m_Events.Broadcast(e);
+  }
 }
 
 void ezSelectionManager::ToggleObject(const ezDocumentObject* pObject)
@@ -206,7 +209,7 @@ bool ezSelectionManager::IsParentSelected(const ezDocumentObject* pObject) const
 
 const ezDocument* ezSelectionManager::GetDocument() const
 {
-  return m_pObjectManager->GetDocument();
+  return m_pSelectionStorage->m_pObjectManager->GetDocument();
 }
 
 ezSharedPtr<ezSelectionManager::Storage> ezSelectionManager::SwapStorage(ezSharedPtr<ezSelectionManager::Storage> pNewStorage)

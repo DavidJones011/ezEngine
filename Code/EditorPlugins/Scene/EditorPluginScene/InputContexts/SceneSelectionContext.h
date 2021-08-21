@@ -11,5 +11,5 @@ protected:
   virtual void OpenDocumentForPickedObject(const ezObjectPickingResult& res) const override;
   virtual void SelectPickedObject(const ezObjectPickingResult& res, bool bToggle, bool bDirect) const override;
 
-  ezUuid FindLayerByObject(ezUuid objectGuid) const;
+  ezUuid FindLayerByObject(ezUuid objectGuid, const ezDocumentObject*& out_pObject) const;
 };

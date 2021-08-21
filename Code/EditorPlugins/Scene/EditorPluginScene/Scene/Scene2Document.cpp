@@ -1,4 +1,4 @@
-#include <EditorPluginScenePCH.h>
+#include <EnginePluginScene/EnginePluginScenePCH.h>
 
 #include <EditorFramework/EditorApp/EditorApp.moc.h>
 #include <EditorPluginScene/Objects/SceneObjectManager.h>
@@ -180,6 +180,10 @@ void ezScene2Document::InitializeAfterLoadingAndSaving()
   SubscribeGameObjectEventHandlers();
 
   UpdateLayers();
+  if (const ezDocumentObject* pLayerObject = GetLayerObject(GetActiveLayer()))
+  {
+    m_LayerSelection.SetSelection(pLayerObject);
+  }
 }
 
 const ezDocumentObject* ezScene2Document::GetSettingsObject() const
@@ -229,7 +233,8 @@ void ezScene2Document::SendGameWorldToEngine()
 void ezScene2Document::LayerSelectionEventHandler(const ezSelectionManagerEvent& e)
 {
   const ezDocumentObject* pObject = m_LayerSelection.GetCurrentObject();
-  if (pObject)
+  // We can't change the active layer while a transaction is in progress at it will swap out the data storage the transaction is currently modifying.
+  if (pObject && !m_CommandHistory->IsInTransaction() && !m_pSceneCommandHistory->IsInTransaction())
   {
     if (pObject->GetType()->IsDerivedFrom(ezGetStaticRTTI<ezSceneLayer>()))
     {
@@ -535,6 +540,9 @@ const ezUuid& ezScene2Document::GetActiveLayer() const
 
 ezStatus ezScene2Document::SetActiveLayer(const ezUuid& layerGuid)
 {
+  EZ_ASSERT_DEV(!m_CommandHistory->IsInTransaction(), "Active layer must not be changed while an operation is in progress.");
+  EZ_ASSERT_DEV(!m_pSceneCommandHistory->IsInTransaction(), "Active layer must not be changed while an operation is in progress.");
+
   if (layerGuid == m_ActiveLayerGuid)
     return ezStatus(EZ_SUCCESS);
 

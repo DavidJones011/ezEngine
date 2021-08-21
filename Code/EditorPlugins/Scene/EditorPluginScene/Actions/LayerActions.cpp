@@ -1,4 +1,4 @@
-#include <EditorPluginScenePCH.h>
+#include <EnginePluginScene/EnginePluginScenePCH.h>
 
 #include <EditorFramework/Assets/AssetCurator.h>
 #include <EditorPluginScene/Actions/LayerActions.h>
@@ -17,6 +17,7 @@ ezActionDescriptorHandle ezLayerActions::s_hLayerCategory;
 ezActionDescriptorHandle ezLayerActions::s_hCreateLayer;
 ezActionDescriptorHandle ezLayerActions::s_hDeleteLayer;
 ezActionDescriptorHandle ezLayerActions::s_hSaveLayer;
+ezActionDescriptorHandle ezLayerActions::s_hSaveActiveLayer;
 ezActionDescriptorHandle ezLayerActions::s_hLayerLoaded;
 ezActionDescriptorHandle ezLayerActions::s_hLayerVisible;
 
@@ -30,6 +31,8 @@ void ezLayerActions::RegisterActions()
     ezLayerAction, ezLayerAction::ActionType::DeleteLayer);
   s_hSaveLayer = EZ_REGISTER_ACTION_1("Layer.SaveLayer", ezActionScope::Document, "Scene - Layer", "",
     ezLayerAction, ezLayerAction::ActionType::SaveLayer);
+  s_hSaveActiveLayer = EZ_REGISTER_ACTION_1("Layer.SaveActiveLayer", ezActionScope::Document, "Scene - Layer", "Ctrl+S",
+    ezLayerAction, ezLayerAction::ActionType::SaveActiveLayer);
   s_hLayerLoaded = EZ_REGISTER_ACTION_1("Layer.LayerLoaded", ezActionScope::Document, "Scene - Layer", "",
     ezLayerAction, ezLayerAction::ActionType::LayerLoaded);
   s_hLayerVisible = EZ_REGISTER_ACTION_1("Layer.LayerVisible", ezActionScope::Document, "Scene - Layer", "",
@@ -42,6 +45,7 @@ void ezLayerActions::UnregisterActions()
   ezActionManager::UnregisterAction(s_hCreateLayer);
   ezActionManager::UnregisterAction(s_hDeleteLayer);
   ezActionManager::UnregisterAction(s_hSaveLayer);
+  ezActionManager::UnregisterAction(s_hSaveActiveLayer);
   ezActionManager::UnregisterAction(s_hLayerLoaded);
   ezActionManager::UnregisterAction(s_hLayerVisible);
 }
@@ -77,6 +81,7 @@ ezLayerAction::ezLayerAction(const ezActionContext& context, const char* szName,
       SetIconPath(":/GuiFoundation/Icons/Delete16.png");
       break;
     case ActionType::SaveLayer:
+    case ActionType::SaveActiveLayer:
       SetIconPath(":/GuiFoundation/Icons/Save16.png");
       break;
     case ActionType::LayerLoaded:
@@ -88,14 +93,21 @@ ezLayerAction::ezLayerAction(const ezActionContext& context, const char* szName,
   }
 
   UpdateEnableState();
-
   m_pSceneDocument->m_LayerEvents.AddEventHandler(ezMakeDelegate(&ezLayerAction::LayerEventHandler, this));
+  if (m_Type == ActionType::SaveActiveLayer)
+  {
+    m_pSceneDocument->s_EventsAny.AddEventHandler(ezMakeDelegate(&ezLayerAction::DocumentEventHandler, this));
+  }
 }
 
 
 ezLayerAction::~ezLayerAction()
 {
   m_pSceneDocument->m_LayerEvents.RemoveEventHandler(ezMakeDelegate(&ezLayerAction::LayerEventHandler, this));
+  if (m_Type == ActionType::SaveActiveLayer)
+  {
+    m_pSceneDocument->s_EventsAny.RemoveEventHandler(ezMakeDelegate(&ezLayerAction::DocumentEventHandler, this));
+  }
 }
 
 void ezLayerAction::ToggleLayerLoaded(ezScene2Document* pSceneDocument, ezUuid layerGuid)
@@ -173,6 +185,15 @@ void ezLayerAction::Execute(const ezVariant& value)
       }
       return;
     }
+    case ActionType::SaveActiveLayer:
+    {
+      ezUuid layerGuid = m_pSceneDocument->GetActiveLayer();
+      if (ezSceneDocument* pLayer = m_pSceneDocument->GetLayerDocument(layerGuid))
+      {
+        pLayer->SaveDocument().LogFailure();
+      }
+      return;
+    }
     case ActionType::LayerLoaded:
     {
       ezUuid layerGuid = GetCurrentSelectedLayer();
@@ -194,6 +215,11 @@ void ezLayerAction::LayerEventHandler(const ezScene2LayerEvent& e)
   UpdateEnableState();
 }
 
+void ezLayerAction::DocumentEventHandler(const ezDocumentEvent& e)
+{
+  UpdateEnableState();
+}
+
 void ezLayerAction::UpdateEnableState()
 {
   ezUuid layerGuid = GetCurrentSelectedLayer();
@@ -210,6 +236,12 @@ void ezLayerAction::UpdateEnableState()
     case ActionType::SaveLayer:
     {
       ezSceneDocument* pLayer = m_pSceneDocument->GetLayerDocument(layerGuid);
+      SetEnabled(pLayer && pLayer->IsModified());
+      return;
+    }
+    case ActionType::SaveActiveLayer:
+    {
+      ezSceneDocument* pLayer = m_pSceneDocument->GetLayerDocument(m_pSceneDocument->GetActiveLayer());
       SetEnabled(pLayer && pLayer->IsModified());
       return;
     }

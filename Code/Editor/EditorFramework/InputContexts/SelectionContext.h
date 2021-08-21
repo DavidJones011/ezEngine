@@ -35,7 +35,7 @@ protected:
   virtual void OpenDocumentForPickedObject(const ezObjectPickingResult& res) const;
   virtual void SelectPickedObject(const ezObjectPickingResult& res, bool bToggle, bool bDirect) const;
 
-private:
+protected:
   void SendMarqueeMsg(QMouseEvent* e, ezUInt8 uiWhatToDo);
 
   ezDelegate<void(const ezDocumentObject*)> m_PickObjectOverride;

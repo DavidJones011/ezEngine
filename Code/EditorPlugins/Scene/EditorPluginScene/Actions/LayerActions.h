@@ -20,6 +20,7 @@ public:
   static ezActionDescriptorHandle s_hCreateLayer;
   static ezActionDescriptorHandle s_hDeleteLayer;
   static ezActionDescriptorHandle s_hSaveLayer;
+  static ezActionDescriptorHandle s_hSaveActiveLayer;
   static ezActionDescriptorHandle s_hLayerLoaded;
   static ezActionDescriptorHandle s_hLayerVisible;
 };
@@ -35,6 +36,7 @@ public:
     CreateLayer,
     DeleteLayer,
     SaveLayer,
+    SaveActiveLayer,
     LayerLoaded,
     LayerVisible,
   };
@@ -47,6 +49,7 @@ public:
 
 private:
   void LayerEventHandler(const ezScene2LayerEvent& e);
+  void DocumentEventHandler(const ezDocumentEvent& e);
   void UpdateEnableState();
   ezUuid GetCurrentSelectedLayer() const;
 

@@ -31,6 +31,7 @@ private:
   ezScene2Document* m_pSceneDocument;
   ezEvent<const ezScene2LayerEvent&>::Unsubscriber m_LayerEventUnsubscriber;
   ezEvent<const ezDocumentEvent&>::Unsubscriber m_DocumentEventUnsubscriber;
+  ezUuid m_CurrentActiveLayer;
 };
 
 /// \brief Custom delegate for layers, used in ezQtLayerPanel.
@@ -47,8 +48,7 @@ public:
   virtual bool mouseMoveEvent(QMouseEvent* event, const QStyleOptionViewItem& option, const QModelIndex& index) override;
   virtual void paint(QPainter* painter, const QStyleOptionViewItem& opt, const QModelIndex& index) const override;
   virtual QSize sizeHint(const QStyleOptionViewItem& opt, const QModelIndex& index) const override;
-
-private:
+  virtual bool helpEvent(QHelpEvent* event, QAbstractItemView* view, const QStyleOptionViewItem& option, const QModelIndex& index) override;
   static QRect GetVisibleIconRect(const QStyleOptionViewItem& opt);
   static QRect GetLoadedIconRect(const QStyleOptionViewItem& opt);
 

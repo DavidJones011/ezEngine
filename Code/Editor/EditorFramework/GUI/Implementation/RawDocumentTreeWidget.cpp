@@ -43,6 +43,12 @@ void ezQtDocumentTreeView::Initialize(ezDocument* pDocument, std::unique_ptr<ezQ
               SLOT(on_selectionChanged_triggered(const QItemSelection&, const QItemSelection&))) != nullptr,
     "signal/slot connection failed");
   m_pSelectionManager->m_Events.AddEventHandler(ezMakeDelegate(&ezQtDocumentTreeView::SelectionEventHandler, this));
+
+  ezSelectionManagerEvent e;
+  e.m_pDocument = m_pDocument;
+  e.m_pObject = nullptr;
+  e.m_Type = ezSelectionManagerEvent::Type::SelectionSet;
+  SelectionEventHandler(e);
 }
 
 ezQtDocumentTreeView::~ezQtDocumentTreeView()
@@ -93,16 +99,22 @@ void ezQtDocumentTreeView::SelectionEventHandler(const ezSelectionManagerEvent& 
       // Can't block signals on selection model or view won't update.
       m_bBlockSelectionSignal = true;
       QItemSelection selection;
-
+      QModelIndex currentIndex;
       for (const ezDocumentObject* pObject : m_pSelectionManager->GetSelection())
       {
-        auto index = m_pModel->ComputeModelIndex(pObject);
-        index = m_pFilterModel->mapFromSource(index);
+        currentIndex = m_pModel->ComputeModelIndex(pObject);
+        currentIndex = m_pFilterModel->mapFromSource(currentIndex);
 
-        if (index.isValid())
-          selection.select(index, index);
+        if (currentIndex.isValid())
+          selection.select(currentIndex, currentIndex);
       }
-      selectionModel()->select(selection, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows | QItemSelectionModel::NoUpdate);
+      if (currentIndex.isValid())
+      {
+        // We need to change the current index as well because the current index can trigger side effects. E.g. deleting the current index row triggers a selection change event.
+        selectionModel()->setCurrentIndex(currentIndex, QItemSelectionModel::SelectCurrent);
+      }
+      selectionModel()
+        ->select(selection, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows | QItemSelectionModel::NoUpdate);
       m_bBlockSelectionSignal = false;
     }
     break;

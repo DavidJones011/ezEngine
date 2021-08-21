@@ -1,4 +1,4 @@
-#include <EditorPluginScenePCH.h>
+#include <EnginePluginScene/EnginePluginScenePCH.h>
 
 #include "EditorFramework/GUI/RawDocumentTreeModel.moc.h"
 #include <Core/World/GameObject.h>
@@ -86,7 +86,10 @@ float ezGameObjectOnLayerDragDropHandler::CanHandle(const ezDragDropInfo* pInfo)
       const ezDocumentObject* pTarget = pDoc->GetSceneObjectManager()->GetObject(pInfo->m_TargetObject);
       if (pTarget && pTarget->GetType() == ezGetStaticRTTI<ezSceneLayer>() && pInfo->m_iTargetObjectInsertChildIndex == -1 && GetCommonBaseType(pInfo) == ezGetStaticRTTI<ezGameObject>())
       {
-        return 1.0f;
+        ezObjectAccessorBase* pAccessor = pDoc->GetSceneObjectAccessor();
+        ezUuid layerGuid = pAccessor->Get<ezUuid>(pTarget, "Layer");
+        if (pDoc->IsLayerLoaded(layerGuid))
+          return 1.0f;
       }
     }
   }
@@ -110,7 +113,7 @@ void ezGameObjectOnLayerDragDropHandler::OnDrop(const ezDragDropInfo* pInfo)
     ezUuid layerGuid = pAccessor->Get<ezUuid>(pTarget, "Layer");
     ezSceneDocument* pTargetDoc = pDoc->GetLayerDocument(layerGuid);
 
-    if (pSourceDoc != pTargetDoc)
+    if (pSourceDoc != pTargetDoc && pTargetDoc)
     {
       const ezUuid activeDoc = pDoc->GetActiveLayer();
       {
