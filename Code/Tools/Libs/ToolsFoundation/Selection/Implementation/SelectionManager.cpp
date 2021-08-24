@@ -4,24 +4,17 @@
 #include <ToolsFoundation/Object/DocumentObjectManager.h>
 #include <ToolsFoundation/Selection/SelectionManager.h>
 
-ezSelectionManager::ezSelectionManager()
+ezSelectionManager::ezSelectionManager(const ezDocumentObjectManager* pObjectManager)
 {
   auto pStorage = EZ_DEFAULT_NEW(Storage);
+  pStorage->m_pObjectManager = pObjectManager;
   SwapStorage(pStorage);
 }
 
-void ezSelectionManager::SetOwner(const ezDocumentObjectManager* pObjectManager)
+ezSelectionManager::~ezSelectionManager()
 {
-  EZ_ASSERT_DEV((m_pSelectionStorage->m_pObjectManager == nullptr) != (pObjectManager == nullptr), "SetOwner can only be called once.");
-  if (pObjectManager)
-  {
-    pObjectManager->m_StructureEvents.AddEventHandler(ezMakeDelegate(&ezSelectionManager::TreeEventHandler, this));
-  }
-  else
-  {
-    m_pSelectionStorage->m_pObjectManager->m_StructureEvents.RemoveEventHandler(ezMakeDelegate(&ezSelectionManager::TreeEventHandler, this));
-  }
-  m_pSelectionStorage->m_pObjectManager = pObjectManager;
+  m_ObjectStructureUnsubscriber.Unsubscribe();
+  m_EventsUnsubscriber.Unsubscribe();
 }
 
 void ezSelectionManager::TreeEventHandler(const ezDocumentObjectStructureEvent& e)
@@ -218,10 +211,12 @@ ezSharedPtr<ezSelectionManager::Storage> ezSelectionManager::SwapStorage(ezShare
 
   auto retVal = m_pSelectionStorage;
 
+  m_ObjectStructureUnsubscriber.Unsubscribe();
   m_EventsUnsubscriber.Unsubscribe();
 
   m_pSelectionStorage = pNewStorage;
 
+  m_pSelectionStorage->m_pObjectManager->m_StructureEvents.AddEventHandler(ezMakeDelegate(&ezSelectionManager::TreeEventHandler, this), m_ObjectStructureUnsubscriber);
   m_pSelectionStorage->m_Events.AddEventHandler([this](const ezSelectionManagerEvent& e) { m_Events.Broadcast(e); }, m_EventsUnsubscriber);
 
   return retVal;

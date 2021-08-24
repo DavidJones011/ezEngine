@@ -80,7 +80,7 @@ public:
   const ezObjectMetaData<ezUuid, ezGameObjectMetaData>* GetSceneGameObjectMetaData() const { return m_SceneGameObjectMetaData.Borrow(); }
   ezObjectMetaData<ezUuid, ezGameObjectMetaData>* GetSceneGameObjectMetaData() { return m_SceneGameObjectMetaData.Borrow(); }
 
-  ezSelectionManager* GetLayerSelectionManager() const { return &m_LayerSelection; }
+  ezSelectionManager* GetLayerSelectionManager() const { return m_LayerSelection.Borrow(); }
 
   ezStatus CreateLayer(const char* szName, const ezUuid& out_layerGuid);
   ezStatus DeleteLayer(const ezUuid& layerGuid);
@@ -147,7 +147,7 @@ private:
   ezUniquePtr<ezObjectMetaData<ezUuid, ezGameObjectMetaData>> m_SceneGameObjectMetaData;
 
   // Layer state
-  mutable ezSelectionManager m_LayerSelection;
+  mutable ezUniquePtr<ezSelectionManager> m_LayerSelection;
   ezUuid m_ActiveLayerGuid;
   ezHashTable<ezUuid, LayerInfo> m_Layers;
 };

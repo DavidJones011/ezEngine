@@ -78,23 +78,21 @@ ezScene2Document::ezScene2Document(const char* szDocumentPath)
   : ezSceneDocument(szDocumentPath, ezSceneDocument::DocumentType::Scene)
 {
   // Separate selection for the layer panel.
-  m_LayerSelection.SetOwner(m_pObjectManager.Borrow());
+  m_LayerSelection = EZ_DEFAULT_NEW(ezSelectionManager, m_pObjectManager.Borrow());
 }
 
 ezScene2Document::~ezScene2Document()
 {
   SetActiveLayer(GetGuid()).LogFailure();
 
-  m_SelectionManager->SetOwner(nullptr);
-
   // Game object document subscribed to the true document originally but we rerouted that to the mock data.
   // In order to destroy the game object document we need to revert this and subscribe to the true document again.
   UnsubscribeGameObjectEventHandlers();
 
   // Move the preserved real scene document back.
-  m_pObjectManager = std::move(m_pSceneObjectManager);
-  m_CommandHistory = std::move(m_pSceneCommandHistory);
   m_SelectionManager = std::move(m_sceneSelectionManager);
+  m_CommandHistory = std::move(m_pSceneCommandHistory);
+  m_pObjectManager = std::move(m_pSceneObjectManager);
   m_ObjectAccessor = std::move(m_pSceneObjectAccessor);
   m_DocumentObjectMetaData = std::move(m_SceneDocumentObjectMetaData);
   m_GameObjectMetaData = std::move(m_SceneGameObjectMetaData);
@@ -106,6 +104,8 @@ ezScene2Document::~ezScene2Document()
   m_layerSelectionEventSubscriber.Unsubscribe();
   m_structureEventSubscriber.Unsubscribe();
   m_commandHistoryEventSubscriber.Unsubscribe();
+
+  m_LayerSelection = nullptr;
 
   for (auto it : m_Layers)
   {
@@ -140,7 +140,7 @@ void ezScene2Document::InitializeAfterLoading(bool bFirstTimeCreation)
 
 void ezScene2Document::InitializeAfterLoadingAndSaving()
 {
-  m_LayerSelection.m_Events.AddEventHandler(ezMakeDelegate(&ezScene2Document::LayerSelectionEventHandler, this), m_layerSelectionEventSubscriber);
+  m_LayerSelection->m_Events.AddEventHandler(ezMakeDelegate(&ezScene2Document::LayerSelectionEventHandler, this), m_layerSelectionEventSubscriber);
   m_pObjectManager->m_StructureEvents.AddEventHandler(ezMakeDelegate(&ezScene2Document::StructureEventHandler, this), m_structureEventSubscriber);
   m_CommandHistory->m_Events.AddEventHandler(ezMakeDelegate(&ezScene2Document::CommandHistoryEventHandler, this), m_commandHistoryEventSubscriber);
   ezDocumentManager::s_Events.AddEventHandler(ezMakeDelegate(&ezScene2Document::DocumentManagerEventHandler, this), m_documentManagerEventSubscriber);
@@ -165,8 +165,7 @@ void ezScene2Document::InitializeAfterLoadingAndSaving()
   m_pObjectManager->SwapStorage(m_pSceneObjectManager->GetStorage());
   m_CommandHistory = EZ_DEFAULT_NEW(ezCommandHistory, this);
   m_CommandHistory->SwapStorage(m_pSceneCommandHistory->GetStorage());
-  m_SelectionManager = EZ_DEFAULT_NEW(ezSelectionManager);
-  m_SelectionManager->SetOwner(m_pObjectManager.Borrow());
+  m_SelectionManager = EZ_DEFAULT_NEW(ezSelectionManager, m_pSceneObjectManager.Borrow());
   m_SelectionManager->SwapStorage(m_sceneSelectionManager->GetStorage());
   m_ObjectAccessor = EZ_DEFAULT_NEW(ezObjectCommandAccessor, m_CommandHistory.Borrow());
   using ObjectMetaData = ezObjectMetaData<ezUuid, ezDocumentObjectMetaData>;
@@ -182,7 +181,7 @@ void ezScene2Document::InitializeAfterLoadingAndSaving()
   UpdateLayers();
   if (const ezDocumentObject* pLayerObject = GetLayerObject(GetActiveLayer()))
   {
-    m_LayerSelection.SetSelection(pLayerObject);
+    m_LayerSelection->SetSelection(pLayerObject);
   }
 }
 
@@ -232,7 +231,7 @@ void ezScene2Document::SendGameWorldToEngine()
 
 void ezScene2Document::LayerSelectionEventHandler(const ezSelectionManagerEvent& e)
 {
-  const ezDocumentObject* pObject = m_LayerSelection.GetCurrentObject();
+  const ezDocumentObject* pObject = m_LayerSelection->GetCurrentObject();
   // We can't change the active layer while a transaction is in progress at it will swap out the data storage the transaction is currently modifying.
   if (pObject && !m_CommandHistory->IsInTransaction() && !m_pSceneCommandHistory->IsInTransaction())
   {
@@ -623,7 +622,7 @@ ezStatus ezScene2Document::SetActiveLayer(const ezUuid& layerGuid)
   // Set selection to object that contains the active layer
   if (const ezDocumentObject* pLayerObject = GetLayerObject(layerGuid))
   {
-    m_LayerSelection.SetSelection(pLayerObject);
+    m_LayerSelection->SetSelection(pLayerObject);
   }
   return ezStatus(EZ_SUCCESS);
 }

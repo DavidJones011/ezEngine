@@ -65,8 +65,7 @@ ezDocument::ezDocument(const char* szPath, ezDocumentObjectManager* pDocumentObj
   m_pObjectManager = ezUniquePtr<ezDocumentObjectManager>(pDocumentObjectManagerImpl, ezFoundation::GetDefaultAllocator());
   m_pObjectManager->SetDocument(this);
   m_CommandHistory = EZ_DEFAULT_NEW(ezCommandHistory, this);
-  m_SelectionManager = EZ_DEFAULT_NEW(ezSelectionManager);
-  m_SelectionManager->SetOwner(m_pObjectManager.Borrow());
+  m_SelectionManager = EZ_DEFAULT_NEW(ezSelectionManager, m_pObjectManager.Borrow());
   m_ObjectAccessor = EZ_DEFAULT_NEW(ezObjectCommandAccessor, m_CommandHistory.Borrow());
 
   m_bWindowRequested = false;
@@ -86,7 +85,7 @@ ezDocument::~ezDocument()
   {
     ezTaskSystem::WaitForGroup(m_activeSaveTask);
   }
-  m_SelectionManager->SetOwner(nullptr);
+  m_SelectionManager = nullptr;
 
   m_pObjectManager->DestroyAllObjects();
 

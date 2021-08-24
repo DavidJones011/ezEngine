@@ -37,10 +37,8 @@ public:
   };
 
 public:
-  ezSelectionManager();
-
-  // Should be called after construction. Can only be called once.
-  void SetOwner(const ezDocumentObjectManager* pObjectManager);
+  ezSelectionManager(const ezDocumentObjectManager* pObjectManager);
+  ~ezSelectionManager();
 
   void SetSelection(const ezDocumentObject* pSingleObject)
   {
@@ -86,5 +84,6 @@ private:
 
   ezSharedPtr<ezSelectionManager::Storage> m_pSelectionStorage;
 
+  ezCopyOnBroadcastEvent<const ezDocumentObjectStructureEvent&>::Unsubscriber m_ObjectStructureUnsubscriber;
   ezCopyOnBroadcastEvent<const ezSelectionManagerEvent&>::Unsubscriber m_EventsUnsubscriber;
 };
