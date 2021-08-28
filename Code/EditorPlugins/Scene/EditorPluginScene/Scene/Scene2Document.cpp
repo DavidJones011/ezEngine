@@ -1,11 +1,12 @@
 #include <EnginePluginScene/EnginePluginScenePCH.h>
 
+#include <GuiFoundation/PropertyGrid/ManipulatorManager.h>
 #include <EditorFramework/EditorApp/EditorApp.moc.h>
 #include <EditorPluginScene/Objects/SceneObjectManager.h>
 #include <EditorPluginScene/Scene/Scene2Document.h>
 #include <Foundation/IO/OSFile.h>
+#include <GuiFoundation/PropertyGrid/VisualizerManager.h>
 #include <ToolsFoundation/Object/ObjectCommandAccessor.h>
-#include "GuiFoundation/PropertyGrid/ManipulatorManager.h"
 
 // clang-format off
 EZ_BEGIN_DYNAMIC_REFLECTED_TYPE(ezSceneLayerBase, 1, ezRTTINoAllocator)
@@ -84,6 +85,10 @@ ezScene2Document::ezScene2Document(const char* szDocumentPath)
 ezScene2Document::~ezScene2Document()
 {
   SetActiveLayer(GetGuid()).LogFailure();
+
+  // We need to clear all things that are dependent in the current object manager, selection etc setup before we swap the managers as otherwise those will fail to de-register.
+  ezVisualizerManager::GetSingleton()->SetVisualizersActive(this, false);
+  m_SelectionManager->Clear();
 
   // Game object document subscribed to the true document originally but we rerouted that to the mock data.
   // In order to destroy the game object document we need to revert this and subscribe to the true document again.
@@ -596,7 +601,10 @@ ezStatus ezScene2Document::SetActiveLayer(const ezUuid& layerGuid)
     ce.m_Type = ezCommandHistoryEvent::Type::HistoryChanged;
     m_CommandHistory->GetStorage()->m_Events.Broadcast(ce);
   }
-
+  if (m_ActiveLayerGuid != GetGuid())
+  {
+    ezVisualizerManager::GetSingleton()->SetVisualizersActive(GetLayerDocument(m_ActiveLayerGuid), false);
+  }
   m_ActiveLayerGuid = layerGuid;
   m_pActiveClientDocument = GetLayerDocument(layerGuid);
   {
@@ -617,6 +625,10 @@ ezStatus ezScene2Document::SetActiveLayer(const ezUuid& layerGuid)
     ezActiveLayerChangedMsgToEngine msg;
     msg.m_ActiveLayer = layerGuid;
     SendMessageToEngine(&msg);
+  }
+  if (m_ActiveLayerGuid != GetGuid())
+  {
+    ezVisualizerManager::GetSingleton()->SetVisualizersActive(GetLayerDocument(m_ActiveLayerGuid), true);
   }
 
   // Set selection to object that contains the active layer
