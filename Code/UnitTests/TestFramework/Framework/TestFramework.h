@@ -393,6 +393,10 @@ EZ_TEST_DLL bool ezTestResult(
 
 //////////////////////////////////////////////////////////////////////////
 
+/// \brief Tests for a ezStatus condition, outputs ezStatus message on failure
+#define EZ_TEST_STATUS(condition) \
+  ezTestResult((condition).m_Result, "Test failed: " EZ_STRINGIZE(condition), EZ_SOURCE_FILE, EZ_SOURCE_LINE, EZ_SOURCE_FUNCTION, (condition).m_sMessage)
+
 inline double ToFloat(int f)
 {
   return static_cast<double>(f);

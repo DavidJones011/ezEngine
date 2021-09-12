@@ -10,7 +10,7 @@
 #include <RendererCore/Components/SkyBoxComponent.h>
 #include <RendererCore/Textures/TextureCubeResource.h>
 
-static ezEditorTestMisc s_GameEngineTestBasics;
+static ezEditorTestMisc s_EditorTestMisc;
 
 const char* ezEditorTestMisc::GetTestName() const
 {

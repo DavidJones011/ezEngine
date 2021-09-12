@@ -16,7 +16,7 @@ struct GameMode
   };
 };
 
-class ezSceneDocument : public ezGameObjectDocument
+class EZ_EDITORPLUGINSCENE_DLL ezSceneDocument : public ezGameObjectDocument
 {
   EZ_ADD_DYNAMIC_REFLECTION(ezSceneDocument, ezGameObjectDocument);
 

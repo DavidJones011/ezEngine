@@ -545,7 +545,7 @@ const ezUuid& ezScene2Document::GetActiveLayer() const
 ezStatus ezScene2Document::SetActiveLayer(const ezUuid& layerGuid)
 {
   EZ_ASSERT_DEV(!m_CommandHistory->IsInTransaction(), "Active layer must not be changed while an operation is in progress.");
-  EZ_ASSERT_DEV(!m_pSceneCommandHistory->IsInTransaction(), "Active layer must not be changed while an operation is in progress.");
+  EZ_ASSERT_DEV(!m_pSceneCommandHistory || !m_pSceneCommandHistory->IsInTransaction(), "Active layer must not be changed while an operation is in progress.");
 
   if (layerGuid == m_ActiveLayerGuid)
     return ezStatus(EZ_SUCCESS);
@@ -571,7 +571,7 @@ ezStatus ezScene2Document::SetActiveLayer(const ezUuid& layerGuid)
   {
     ezDocument* pDoc = ezDocumentManager::GetDocumentByGuid(layerGuid);
     if (!pDoc)
-      return ezStatus("Unladed layer can't be made active.");
+      return ezStatus("Unloaded layer can't be made active.");
 
     ezDocumentObjectStructureEvent e;
     e.m_pDocument = this;

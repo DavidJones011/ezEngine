@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ToolsFoundation/Document/DocumentManager.h"
 #include <EditorPluginScene/Objects/SceneObjectManager.h>
 #include <EditorPluginScene/Scene/SceneDocument.h>
 #include <Foundation/Types/UniquePtr.h>
+#include <ToolsFoundation/Document/DocumentManager.h>
 #include <ToolsFoundation/Object/ObjectCommandAccessor.h>
 
 class ezScene2Document;
@@ -62,7 +62,7 @@ struct ezScene2LayerEvent
   ezUuid m_layerGuid;
 };
 
-class ezScene2Document : public ezSceneDocument
+class EZ_EDITORPLUGINSCENE_DLL ezScene2Document : public ezSceneDocument
 {
   EZ_ADD_DYNAMIC_REFLECTION(ezScene2Document, ezSceneDocument);
 
