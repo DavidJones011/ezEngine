@@ -1,4 +1,4 @@
-#include <EnginePluginScene/EnginePluginScenePCH.h>
+#include <EditorPluginScene/EditorPluginScenePCH.h>
 
 #include <EditorFramework/DocumentWindow/QuadViewWidget.moc.h>
 #include <EditorFramework/Gizmos/SnapProvider.h>
@@ -16,7 +16,8 @@
 ezQtScene2DocumentWindow::ezQtScene2DocumentWindow(ezScene2Document* pDocument)
   : ezQtSceneDocumentWindowBase(pDocument)
 {
-  auto ViewFactory = [](ezQtEngineDocumentWindow* pWindow, ezEngineViewConfig* pConfig) -> ezQtEngineViewWidget* {
+  auto ViewFactory = [](ezQtEngineDocumentWindow* pWindow, ezEngineViewConfig* pConfig) -> ezQtEngineViewWidget*
+  {
     ezQtSceneViewWidget* pWidget = new ezQtSceneViewWidget(nullptr, static_cast<ezQtSceneDocumentWindowBase*>(pWindow), pConfig);
     pWindow->AddViewWidget(pWidget);
     return pWidget;
@@ -24,7 +25,8 @@ ezQtScene2DocumentWindow::ezQtScene2DocumentWindow(ezScene2Document* pDocument)
   m_pQuadViewWidget = new ezQtQuadViewWidget(pDocument, this, ViewFactory, "EditorPluginScene_ViewToolBar");
 
   pDocument->SetEditToolConfigDelegate(
-    [this](ezGameObjectEditTool* pTool) { pTool->ConfigureTool(static_cast<ezGameObjectDocument*>(GetDocument()), this, this); });
+    [this](ezGameObjectEditTool* pTool)
+    { pTool->ConfigureTool(static_cast<ezGameObjectDocument*>(GetDocument()), this, this); });
 
   setCentralWidget(m_pQuadViewWidget);
 

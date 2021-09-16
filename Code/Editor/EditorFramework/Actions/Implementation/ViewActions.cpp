@@ -1,6 +1,7 @@
 #include <EditorFramework/EditorFrameworkPCH.h>
 
 #include <EditorFramework/Actions/ViewActions.h>
+#include <EditorFramework/Assets/AssetDocument.h>
 #include <EditorFramework/DocumentWindow/EngineViewWidget.moc.h>
 
 ezActionDescriptorHandle ezViewActions::s_hRenderMode;

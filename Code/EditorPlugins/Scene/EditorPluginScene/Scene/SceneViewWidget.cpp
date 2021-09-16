@@ -1,18 +1,18 @@
 #include <EditorPluginScene/EditorPluginScenePCH.h>
 
 #include <EditorFramework/Actions/GameObjectSelectionActions.h>
+#include <EditorFramework/DocumentWindow/GameObjectDocumentWindow.moc.h>
 #include <EditorFramework/DragDrop/DragDropHandler.h>
 #include <EditorFramework/DragDrop/DragDropInfo.h>
 #include <EditorPluginScene/Actions/SceneActions.h>
 #include <EditorPluginScene/Actions/SelectionActions.h>
-#include <EditorPluginScene/Scene/SceneViewWidget.moc.h>
 #include <EditorPluginScene/InputContexts/SceneSelectionContext.h>
+#include <EditorPluginScene/Scene/Scene2Document.h>
+#include <EditorPluginScene/Scene/SceneViewWidget.moc.h>
 #include <GuiFoundation/Action/ActionMapManager.h>
 #include <GuiFoundation/Action/EditActions.h>
 #include <GuiFoundation/ActionViews/MenuActionMapView.moc.h>
 #include <QKeyEvent>
-
-
 
 bool ezQtSceneViewWidget::s_bContextMenuInitialized = false;
 

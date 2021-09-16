@@ -1,4 +1,4 @@
-#include <EnginePluginScene/EnginePluginScenePCH.h>
+#include <EditorPluginScene/EditorPluginScenePCH.h>
 
 #include "EditorFramework/GUI/RawDocumentTreeModel.moc.h"
 #include <Core/World/GameObject.h>

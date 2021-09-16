@@ -1,10 +1,12 @@
-#include <EnginePluginScene/EnginePluginScenePCH.h>
+#include <EditorPluginScene/EditorPluginScenePCH.h>
 
-#include <GuiFoundation/PropertyGrid/ManipulatorManager.h>
+#include <EditorFramework/Assets/AssetCurator.h>
 #include <EditorFramework/EditorApp/EditorApp.moc.h>
 #include <EditorPluginScene/Objects/SceneObjectManager.h>
+#include <EditorPluginScene/Scene/LayerDocument.h>
 #include <EditorPluginScene/Scene/Scene2Document.h>
 #include <Foundation/IO/OSFile.h>
+#include <GuiFoundation/PropertyGrid/ManipulatorManager.h>
 #include <GuiFoundation/PropertyGrid/VisualizerManager.h>
 #include <ToolsFoundation/Object/ObjectCommandAccessor.h>
 

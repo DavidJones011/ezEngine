@@ -1,4 +1,4 @@
-#include <EnginePluginScene/EnginePluginScenePCH.h>
+#include <EditorPluginScene/EditorPluginScenePCH.h>
 
 #include <EditorPluginScene/Scene/LayerDocument.h>
 #include <EditorPluginScene/Scene/Scene2Document.h>

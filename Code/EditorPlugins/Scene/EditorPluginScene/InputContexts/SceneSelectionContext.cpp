@@ -1,12 +1,12 @@
-#include <EnginePluginScene/EnginePluginScenePCH.h>
+#include <EditorPluginScene/EditorPluginScenePCH.h>
 
+#include <EditorFramework/DocumentWindow/EngineDocumentWindow.moc.h>
+#include <EditorFramework/DocumentWindow/EngineViewWidget.moc.h>
 #include <EditorPluginScene/InputContexts/SceneSelectionContext.h>
 #include <EditorPluginScene/Scene/LayerDocument.h>
-#include <EditorFramework/DocumentWindow/EngineViewWidget.moc.h>
-#include <EditorFramework/DocumentWindow/EngineDocumentWindow.moc.h>
 #include <EditorPluginScene/Scene/Scene2Document.h>
 
- ezSceneSelectionContext::ezSceneSelectionContext(ezQtEngineDocumentWindow* pOwnerWindow, ezQtEngineViewWidget* pOwnerView, const ezCamera* pCamera)
+ezSceneSelectionContext::ezSceneSelectionContext(ezQtEngineDocumentWindow* pOwnerWindow, ezQtEngineViewWidget* pOwnerView, const ezCamera* pCamera)
   : ezSelectionContext(pOwnerWindow, pOwnerView, pCamera)
 {
 }

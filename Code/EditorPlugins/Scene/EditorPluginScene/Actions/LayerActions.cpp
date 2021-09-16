@@ -1,4 +1,4 @@
-#include <EnginePluginScene/EnginePluginScenePCH.h>
+#include <EditorPluginScene/EditorPluginScenePCH.h>
 
 #include <EditorFramework/Assets/AssetCurator.h>
 #include <EditorPluginScene/Actions/LayerActions.h>

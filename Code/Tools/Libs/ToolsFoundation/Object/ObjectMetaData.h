@@ -4,13 +4,14 @@
 #include <Foundation/Containers/HashTable.h>
 #include <Foundation/Reflection/ReflectionUtils.h>
 #include <Foundation/Serialization/AbstractObjectGraph.h>
+#include <Foundation/Types/RefCounted.h>
+#include <Foundation/Types/SharedPtr.h>
 #include <ToolsFoundation/ToolsFoundationDLL.h>
 
 template <typename KEY, typename VALUE>
 class ezObjectMetaData
 {
 public:
-
   struct EventData
   {
     KEY m_ObjectKey;

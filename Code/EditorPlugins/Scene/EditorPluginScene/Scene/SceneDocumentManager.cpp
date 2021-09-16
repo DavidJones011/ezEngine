@@ -1,6 +1,7 @@
 #include <EditorPluginScene/EditorPluginScenePCH.h>
 
 #include <EditorPluginScene/Scene/LayerDocument.h>
+#include <EditorPluginScene/Scene/Scene2Document.h>
 #include <EditorPluginScene/Scene/SceneDocument.h>
 #include <EditorPluginScene/Scene/SceneDocumentManager.h>
 #include <ToolsFoundation/Command/TreeCommands.h>
