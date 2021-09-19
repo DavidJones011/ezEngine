@@ -4,7 +4,7 @@
 
 class ezScene2Document;
 
-class ezLayerDocument : public ezSceneDocument
+class EZ_EDITORPLUGINSCENE_DLL ezLayerDocument : public ezSceneDocument
 {
   EZ_ADD_DYNAMIC_REFLECTION(ezLayerDocument, ezSceneDocument);
 

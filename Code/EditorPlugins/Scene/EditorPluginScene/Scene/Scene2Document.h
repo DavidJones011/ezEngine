@@ -82,7 +82,7 @@ public:
 
   ezSelectionManager* GetLayerSelectionManager() const { return m_LayerSelection.Borrow(); }
 
-  ezStatus CreateLayer(const char* szName, const ezUuid& out_layerGuid);
+  ezStatus CreateLayer(const char* szName, ezUuid& out_layerGuid);
   ezStatus DeleteLayer(const ezUuid& layerGuid);
 
   const ezUuid& GetActiveLayer() const;

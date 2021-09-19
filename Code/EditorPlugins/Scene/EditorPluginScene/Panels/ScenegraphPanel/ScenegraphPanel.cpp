@@ -96,6 +96,8 @@ void ezQtScenegraphPanel::LayerEventHandler(const ezScene2LayerEvent& e)
 
 void ezQtScenegraphPanel::LayerLoaded(const ezUuid& layerGuid)
 {
+  EZ_ASSERT_DEV(!m_LayerWidgets.Contains(layerGuid), "LayerLoaded was fired twice for the same layer.");
+
   auto pScene2 = static_cast<ezScene2Document*>(m_pSceneDocument);
   auto pLayer = pScene2->GetLayerDocument(layerGuid);
   auto pCustomModel = CreateGameObjectTreeModel(pLayer);
@@ -107,6 +109,8 @@ void ezQtScenegraphPanel::LayerLoaded(const ezUuid& layerGuid)
 
 void ezQtScenegraphPanel::LayerUnloaded(const ezUuid& layerGuid)
 {
+  EZ_ASSERT_DEV(m_LayerWidgets.Contains(layerGuid), "LayerUnloaded was fired without the layer being loaded first.");
+
   ezQtGameObjectWidget* pWidget = m_LayerWidgets[layerGuid];
   m_pStack->removeWidget(pWidget);
   m_LayerWidgets.Remove(layerGuid);

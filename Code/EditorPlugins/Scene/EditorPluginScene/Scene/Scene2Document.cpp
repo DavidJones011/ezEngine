@@ -284,7 +284,9 @@ void ezScene2Document::DocumentManagerEventHandler(const ezDocumentManager::Even
 
         ezUuid layerGuid = e.m_pDocument->GetGuid();
         LayerInfo* pInfo = nullptr;
-        if (m_Layers.TryGetValue(layerGuid, pInfo))
+        // Either the layer is currently being creating, in which case m_Layers can't be filled yet,
+        // or an existing layer's state is toggled either internally by the scene or externally by the editor in which case the layer is known and we must react to it.
+        if (m_Layers.TryGetValue(layerGuid, pInfo) && pInfo->m_pLayer != pLayer)
         {
           pInfo->m_pLayer = pLayer;
 
@@ -298,7 +300,7 @@ void ezScene2Document::DocumentManagerEventHandler(const ezDocumentManager::Even
     break;
     case ezDocumentManager::Event::Type::DocumentClosing:
     {
-      if (e.m_pDocument->GetDynamicRTTI()->IsDerivedFrom<ezSceneDocument>())
+      if (e.m_pDocument->GetDynamicRTTI()->IsDerivedFrom<ezLayerDocument>())
       {
         ezUuid layerGuid = e.m_pDocument->GetGuid();
         LayerInfo* pInfo = nullptr;
@@ -424,17 +426,17 @@ void ezScene2Document::LayerRemoved(const ezUuid& layerGuid)
     SetActiveLayer(GetGuid()).LogFailure();
   }
 
+  SetLayerLoaded(layerGuid, false).LogFailure();
+
   ezScene2LayerEvent e;
   e.m_Type = ezScene2LayerEvent::Type::LayerRemoved;
   e.m_layerGuid = layerGuid;
   m_LayerEvents.Broadcast(e);
 
-  SetLayerLoaded(layerGuid, false).LogFailure();
-
   m_Layers.Remove(layerGuid);
 }
 
-ezStatus ezScene2Document::CreateLayer(const char* szName, const ezUuid& out_layerGuid)
+ezStatus ezScene2Document::CreateLayer(const char* szName, ezUuid& out_layerGuid)
 {
   // We need to be the active layer in order to make changes to the layers.
   ezStatus res = SetActiveLayer(GetGuid());
@@ -454,10 +456,11 @@ ezStatus ezScene2Document::CreateLayer(const char* szName, const ezUuid& out_lay
   {
     ezDocumentObject* pRoot = m_pSceneObjectManager->GetRootObject();
     pLayerDoc = ezDynamicCast<ezSceneDocument*>(ezQtEditorApp::GetSingleton()->OpenDocument(targetDirectory, ezDocumentFlags::None, pRoot));
-    //auto assetInfo = ezAssetCurator::GetSingleton()->GetSubAsset();
 
-
-    //return ezStatus(ezFmt("The layer file '{}' already exists.", targetDirectory));
+    if (m_Layers.Contains(pLayerDoc->GetGuid()))
+    {
+      return ezStatus(ezFmt("A layer named '{}' already exists in this scene.", szName));
+    }
   }
   else
   {
@@ -483,12 +486,19 @@ ezStatus ezScene2Document::CreateLayer(const char* szName, const ezUuid& out_lay
   }
   pAccessor->FinishTransaction();
 
+  LayerInfo* pInfo = nullptr;
+  EZ_ASSERT_DEV(m_Layers.Contains(pLayerDoc->GetGuid()), "FinishTransaction should have triggered UpdateLayers and filled m_Layers.");
   // We need to manually emit this here as when the layer doc was loaded DocumentManagerEventHandler will not fire as the document was not added as a layer yet.
-  ezScene2LayerEvent e;
-  e.m_Type = ezScene2LayerEvent::Type::LayerLoaded;
-  e.m_layerGuid = pLayerDoc->GetGuid();
-  m_LayerEvents.Broadcast(e);
+  if (m_Layers.TryGetValue(pLayerDoc->GetGuid(), pInfo) && pInfo->m_pLayer != pLayerDoc)
+  {
+    pInfo->m_pLayer = pLayerDoc;
 
+    ezScene2LayerEvent e;
+    e.m_Type = ezScene2LayerEvent::Type::LayerLoaded;
+    e.m_layerGuid = pLayerDoc->GetGuid();
+    m_LayerEvents.Broadcast(e);
+  }
+  out_layerGuid = pLayerDoc->GetGuid();
   return ezStatus(EZ_SUCCESS);
 }
 
@@ -694,19 +704,23 @@ ezStatus ezScene2Document::SetLayerLoaded(const ezUuid& layerGuid, bool bLoaded)
     ezDocument* pDoc = nullptr;
     // Pass our root into it to indicate what the parent context of the layer is.
     ezDocumentObject* pRoot = m_pSceneObjectManager->GetRootObject();
-    if (ezDocument* pDoc = ezQtEditorApp::GetSingleton()->OpenDocument(sAbsPath, ezDocumentFlags::None, pRoot))
+    if (ezDocument* pLayer = ezQtEditorApp::GetSingleton()->OpenDocument(sAbsPath, ezDocumentFlags::None, pRoot))
     {
-      if (layerGuid != GetGuid() && pDoc->GetHostDocument() != this)
+      if (layerGuid != GetGuid() && pLayer->GetHostDocument() != this)
       {
         return ezStatus("Layer already open in another window.");
       }
 
-      pInfo->m_pLayer = ezDynamicCast<ezSceneDocument*>(pDoc);
+      // In case we are responding to e.g. an redo 'Add Layer' the layer is already loaded in the editor but we still want to enforce that the event is fired every time after adding a layer.
+      if (pInfo->m_pLayer != pLayer)
+      {
+        pInfo->m_pLayer = ezDynamicCast<ezSceneDocument*>(pLayer);
 
-      ezScene2LayerEvent e;
-      e.m_Type = ezScene2LayerEvent::Type::LayerLoaded;
-      e.m_layerGuid = layerGuid;
-      m_LayerEvents.Broadcast(e);
+        ezScene2LayerEvent e;
+        e.m_Type = ezScene2LayerEvent::Type::LayerLoaded;
+        e.m_layerGuid = layerGuid;
+        m_LayerEvents.Broadcast(e);
+      }
 
       return ezStatus(EZ_SUCCESS);
     }
@@ -725,10 +739,10 @@ ezStatus ezScene2Document::SetLayerLoaded(const ezUuid& layerGuid, bool bLoaded)
     pManager->CloseDocument(pInfo->m_pLayer);
     pInfo->m_pLayer = nullptr;
 
-    ezScene2LayerEvent e;
-    e.m_Type = ezScene2LayerEvent::Type::LayerUnloaded;
-    e.m_layerGuid = layerGuid;
-    m_LayerEvents.Broadcast(e);
+    //ezScene2LayerEvent e;
+    //e.m_Type = ezScene2LayerEvent::Type::LayerUnloaded;
+    //e.m_layerGuid = layerGuid;
+    //m_LayerEvents.Broadcast(e);
 
     return ezStatus(EZ_SUCCESS);
   }
